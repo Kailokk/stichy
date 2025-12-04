@@ -16,8 +16,6 @@ use {defmt_rtt as _, panic_probe as _};
 #[used]
 pub static IMAGE_DEF: ImageDef = hal::block::ImageDef::secure_exe();
 
-static CHANNEL: Channel<ThreadModeRawMutex, ContrastInstruction, 1> = Channel::new();
-
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
     let p = embassy_rp::init(Default::default());
