@@ -57,6 +57,7 @@
             openssl
 
             sccache
+            bacon
           ];
 
           RUSTC_WRAPPER = "${pkgs.sccache}/bin/sccache";

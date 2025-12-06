@@ -18,8 +18,8 @@ use {defmt_rtt as _, panic_probe as _};
 pub static IMAGE_DEF: ImageDef = hal::block::ImageDef::secure_exe();
 
 #[embassy_executor::main]
-async fn main(spawner: Spawner) {
-    let p = embassy_rp::init(Default::default());
+async fn main(_spawner: Spawner) {
+    let _p = embassy_rp::init(Default::default());
     
 }
 
