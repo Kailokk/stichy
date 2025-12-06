@@ -1,12 +1,13 @@
 #![no_std]
 #![no_main]
 
+mod counter;
+mod display;
+
+
 use embassy_executor::Spawner;
 use embassy_rp::block::ImageDef;
 use embassy_rp::{self as hal};
-use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
-use embassy_time::Timer;
-use embassy_sync::channel::Channel;
 
 
 use {defmt_rtt as _, panic_probe as _};
