@@ -1,8 +1,8 @@
 use embassy_time::Duration;
 
-struct Command{
-    byte:u8,
-    timing:Duration
+pub struct Command{
+    pub byte:u8,
+    pub timing:Duration
 }
 
 enum DisplayCommand {

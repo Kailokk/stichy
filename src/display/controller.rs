@@ -1,3 +1,5 @@
+use embassy_rp::i2c_slave::Command;
+
 
 
 type DisplayCoordinate = (u8,u8);
@@ -8,8 +10,8 @@ type DisplayCoordinate = (u8,u8);
 
 pub struct DisplayController{
     driver:(),
-    cursor_position:DisplayCoordinate
-
+    command_buffer:[Command; 32],
+    
 }
 
 impl DisplayController{
