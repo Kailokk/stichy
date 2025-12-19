@@ -42,6 +42,8 @@ impl<'a> DisplayController<'a> {
             }
             .to_byte(),
         );
+
+        display_driver.write_command(DisplayCommand::ClearDisplay.to_byte());
         display_driver.write_command(DisplayCommand::ReturnHome.to_byte());
 
         display_driver.init_backlight();
@@ -51,11 +53,18 @@ impl<'a> DisplayController<'a> {
         }
     }
 
-    pub fn set_backlight_color(&mut self, red:u8,green:u8,blue:u8) {
+    pub fn set_backlight_color(&mut self, red: u8, green: u8, blue: u8) {
         self.driver.set_backlight_color(red, green, blue);
     }
 
-    pub fn clear_display() {}
+    pub fn write_character(&mut self, byte: u8) {
+        self.driver.write_character(byte);
+    }
+
+    pub fn clear_display(&mut self) {
+        self.driver
+            .write_command(DisplayCommand::ClearDisplay.to_byte());
+    }
 
     //this could maybe be abstracted
     pub fn return_home() {}
