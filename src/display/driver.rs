@@ -11,7 +11,7 @@ enum DisplayChip {
 }
 
 impl DisplayChip {
-    const fn as_bytes(self) -> u16 {
+    const fn as_bytes(&self) -> u16 {
         match self {
             DisplayChip::Character => 0x7cu16 >> 1,
             DisplayChip::Backlight => 0xC0u16 >> 1,

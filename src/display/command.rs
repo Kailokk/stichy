@@ -23,8 +23,8 @@ pub enum DisplayCommand {
 }
 
 impl DisplayCommand {
-    pub const fn to_byte(self) -> u8 {
-        let byte = match self {
+    pub const fn to_byte(&self) -> u8 {
+       match *self {
             DisplayCommand::ClearDisplay => 0b0000_0001,
             DisplayCommand::ReturnHome => 0b0000_0010,
             DisplayCommand::SetEntryMode {
@@ -65,9 +65,7 @@ impl DisplayCommand {
                 set_bit_if_true(display_font_is_short, 0b0000_0100, &mut command);
                 command
             }
-        };
-
-        byte
+        }
     }
 }
 
