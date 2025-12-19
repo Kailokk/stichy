@@ -1,8 +1,10 @@
 use embassy_sync::{blocking_mutex::raw::ThreadModeRawMutex, channel::Channel};
 
+pub use crate::display::controller::DisplayController;
+
 pub mod command;
 mod controller;
-mod driver;
+pub mod driver;
 
 pub type CommandByte = u8;
 

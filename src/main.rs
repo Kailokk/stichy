@@ -10,6 +10,7 @@ use embassy_rp::block::ImageDef;
 use embassy_rp::{self as hal};
 use embassy_time::Timer;
 
+use crate::display::DisplayController;
 use crate::display::command::DisplayCommand;
 use crate::display::driver::DisplayDriver;
 
@@ -26,66 +27,45 @@ async fn main(_spawner: Spawner) {
 
     debug!("Initiating startup sequence");
     Timer::after_millis(50).await;
-    let mut display_driver = DisplayDriver::new_i2c_driver(p.I2C0, p.PIN_4, p.PIN_5);
-
-    debug!("Display driver initiated");
-    // display_driver.write(0x7C).await;
-    display_driver
-        .write(
-            DisplayCommand::FunctionSet {
-                display_is_two_lines: true,
-                display_font_is_short: true,
-            }
-            .to_byte()
-            .byte,
-        )
-        .await;
-    Timer::after_millis(10).await;
-    debug!("First function set");
-    display_driver
-        .write(
-            DisplayCommand::FunctionSet {
-                display_is_two_lines: true ,
-                display_font_is_short: true,
-            }
-            .to_byte()
-            .byte,
-        )
-        .await;
-    Timer::after_millis(10).await;
-    debug!("Second function set");
-    display_driver
-        .write(
-            DisplayCommand::FunctionSet {
-                display_is_two_lines: true,
-                display_font_is_short: true,
-            }
-            .to_byte()
-            .byte,
-        )
-        .await;
-    Timer::after_millis(10).await;
-    debug!("Third, settings display");
-    display_driver
-        .write(
-            DisplayCommand::DisplayOnOffControl {
-                display_on: true,
-                cursor_on: true,
-                cursor_blinking: true,
-            }
-            .to_byte()
-            .byte,
-        )
-        .await;
-    debug!("Third, settings display");
-    display_driver
-        .write(DisplayCommand::ReturnHome.to_byte().byte)
-        .await;
-    debug!("startup complete");
+    
+    let mut display_controller:DisplayController = DisplayController::init(p.I2C0, p.PIN_4, p.PIN_5).await;
 
     loop {
-        display_driver.write_char(0b01000001).await;
-        Timer::after_millis(5).await;
+        for r in 0..=255{
+            display_controller.set_backlight_color(r,0,0);
+            Timer::after_millis(10).await;                    
+        }
+
+        Timer::after_secs(1).await;
+        for r in (0..=255).rev(){
+            display_controller.set_backlight_color(r,0,0);
+            Timer::after_millis(10).await;                    
+        }
+
+        Timer::after_secs(1).await;
+        for g in 0..=255{
+            display_controller.set_backlight_color(0,g,0);
+            Timer::after_millis(10).await;        
+        }
+
+
+        Timer::after_secs(1).await;
+        for g in (0..=255).rev(){
+            display_controller.set_backlight_color(0,g,0);
+            Timer::after_millis(10).await;        
+        }
+
+        Timer::after_secs(1).await;
+        for b in 0..255{
+            display_controller.set_backlight_color(0,0,b);
+            Timer::after_millis(10).await;
+        }
+
+        Timer::after_secs(1).await;
+        for b in (0..=255).rev(){
+            display_controller.set_backlight_color(0,0,b);
+            Timer::after_millis(10).await;
+        }
     }
 }
 
