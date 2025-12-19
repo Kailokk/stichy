@@ -55,6 +55,7 @@
             cargo-expand
             picotool
             openssl
+            probe-rs-tools
 
             sccache
             bacon

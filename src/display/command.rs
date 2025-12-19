@@ -1,11 +1,8 @@
 use embassy_time::Duration;
 
-pub struct Command{
-    pub byte:u8,
-    pub timing:Duration
-}
+use crate::display::set_bit_if_true;
 
-enum DisplayCommand {
+pub enum DisplayCommand {
     ClearDisplay,
     ReturnHome,
     SetEntryMode {
@@ -28,18 +25,18 @@ enum DisplayCommand {
 }
 
 impl DisplayCommand {
-    pub const fn to_bytes(self) -> Command {
-       let (byte, timing) = match self {
-            DisplayCommand::ClearDisplay => (0b0000_0001, Duration::from_millis(2)),
-            DisplayCommand::ReturnHome => (0b0000_0010,Duration::from_millis(2)),
+    pub const fn to_byte(self) -> u8 {
+       let byte = match self {
+            DisplayCommand::ClearDisplay => 0b0000_0001,
+            DisplayCommand::ReturnHome => 0b0000_0010,
             DisplayCommand::SetEntryMode {
                 cursor_move_rtl,
                 can_shift,
             } => {
                 let mut command:u8 = 0b0000_0100;
-                Self::set_if_true(cursor_move_rtl, 0b0000_0010, &mut command);
-                Self::set_if_true(can_shift, 0b0000_0001, &mut command);
-                (command, Duration::from_micros(40))
+                set_bit_if_true(cursor_move_rtl, 0b0000_0010, &mut command);
+                set_bit_if_true(can_shift, 0b0000_0001, &mut command);
+                command
             }
             DisplayCommand::DisplayOnOffControl {
                 display_on,
@@ -47,39 +44,35 @@ impl DisplayCommand {
                 cursor_blinking,
             } => {
                 let mut command:u8 = 0b0000_1000;
-                Self::set_if_true(display_on, 0b0000_0100, &mut command);
-                Self::set_if_true(cursor_on, 0b0000_0010, &mut command);
-                Self::set_if_true(cursor_blinking, 0b0000_0001, &mut command);
-                (command, Duration::from_micros(40))
+                set_bit_if_true(display_on, 0b0000_0100, &mut command);
+                set_bit_if_true(cursor_on, 0b0000_0010, &mut command);
+                set_bit_if_true(cursor_blinking, 0b0000_0001, &mut command);
+                command
             }
             DisplayCommand::CursorOrDisplayShift {
                 cursor_is_moving,
                 display_is_moving,
             } =>{
                 let mut command:u8 = 0b0001_0000;
-                Self::set_if_true(cursor_is_moving, 0b0000_1000, &mut command);
-                Self::set_if_true(display_is_moving, 0b0000_0100, &mut command);
-                (command, Duration::from_micros(40))
+                set_bit_if_true(cursor_is_moving, 0b0000_1000, &mut command);
+                set_bit_if_true(display_is_moving, 0b0000_0100, &mut command);
+                command
             }
             DisplayCommand::FunctionSet {
                 display_is_two_lines,
                 display_font_is_short,
             } => {
                 let mut command:u8 = 0b0010_0000;
-                Self::set_if_true(display_is_two_lines, 0b0000_1000, &mut command);
-                Self::set_if_true(display_font_is_short, 0b0000_0100, &mut command);
-                (command, Duration::from_micros(40))
+                set_bit_if_true(display_is_two_lines, 0b0000_1000, &mut command);
+                set_bit_if_true(display_font_is_short, 0b0000_0100, &mut command);
+                command
             }
         };
 
-        Command { byte, timing }
+        byte
     }
 
-   const fn set_if_true(value: bool, bit_to_set: u8, byte: &mut u8) {
-        if value {
-            *byte |= bit_to_set
-        }
-    }
+
 }
 
 //TODO: Implement tests when debug probe is available using probe-rs and embedded-test libraries

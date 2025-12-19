@@ -1,74 +1,64 @@
-use embassy_rp::gpio::{AnyPin, Level, Output};
+use core::error;
 
-use crate::display::command::Command;
+use embassy_rp::{Peripheral, PeripheralRef, bind_interrupts, gpio::{AnyPin, Level, Output}, i2c::{self, Async, Blocking, Config, Error, I2c, Instance, InterruptHandler, SclPin, SdaPin}, peripherals::{I2C0, PIN_0, PIN_1, PIN_2, PIN_4, PIN_5}, pio::Irq};
 
-pub enum DisplayDriver<'a> {
-    FourBit {
-        register_select_pin: Output<'a>,
-        rw_pin: Output<'a>,
-        enable_pin: Output<'a>,
-        db4: Output<'a>,
-        db5: Output<'a>,
-        db6: Output<'a>,
-        db7: Output<'a>,
-    },
+
+enum DisplayChip{
+    Character,
+    Backlight
 }
 
+impl DisplayChip{
+    const fn as_bytes(self)->u16{
+        match self{
+            DisplayChip::Character => 0x7cu16 >> 1,
+            DisplayChip::Backlight => todo!(),
+        }
+    }
+}
+
+pub struct DisplayDriver<'a> {
+    i2c_connection:I2c<'a, I2C0, Async>
+}
 
 //commands are written, commands are read,
 
 impl<'a> DisplayDriver<'a> {
-    pub fn new_four_bit(
-        register_select_pin: AnyPin,
-        rw_pin: AnyPin,
-        enable_pin: AnyPin,
-        data_pins: [AnyPin; 4],
+    pub fn new_i2c_driver(
+        //TODO: Genericise these types where possible?
+        peripheral:I2C0,
+        sda_pin: PIN_4,
+        scl_pin: PIN_5,
+        
     ) -> Self {
-        let rw_pin = Output::new(rw_pin, Level::Low);
-        let enable_pin = Output::new(enable_pin, Level::Low);
-        let register_select_pin = Output::new(register_select_pin, Level::Low);
-        let [db4, db5, db6, db7] = dat a_pins;
-        let db4 = Output::new(db4, Level::Low);
-        let db5 = Output::new(db5, Level::Low);
-        let db6 = Output::new(db6, Level::Low);
-        let db7 = Output::new(db7, Level::Low);
 
-        Self::FourBit {
-            register_select_pin,
-            rw_pin,
-            enable_pin,
-            db4,
-            db5,
-            db6,
-            db7,
-        }
+        bind_interrupts!(struct Irqs {
+        I2C0_IRQ => InterruptHandler<I2C0>;
+        });
+
+        let mut config = Config::default();
+
+        config.frequency = 400_000; //400khz
+
+        Self { i2c_connection:i2c::I2c::new_async(peripheral, scl_pin, sda_pin, Irqs, config)  }
     }
 
-    pub async fn write(&mut self, commands: &[Command]) {
-        for command in commands {
-            self.execute_command(command).await
+    fn write(&mut self, chip:DisplayChip, bytes: &[u8]) -> Option<Error> {
+        if let Err(error)  = self.i2c_connection.blocking_write(chip.as_bytes(), bytes) {
+            //TODO: improve error handling
+            defmt::error!("Fatal i2c error occurred: {}", error);
         }
+
+        None
     }
 
-    async fn execute_command(&mut self, command: &Command) {
-        match self {
-            DisplayDriver::FourBit { register_select_pin, rw_pin, enable_pin, db4, db5, db6, db7 } => {
-                register_select_pin.set_high();   
-                rw_pin.set_low();
-                for bit in 0..3{
-
-                }
-            },
+        pub async fn write_char(&mut self, command: u8) -> Option<Error> {
+        defmt::debug!("Writing command: {:08b}",command);
+        if let Err(error)  = self.i2c_connection.write_async(0x7cu16 >> 1, [0b01000000,command]).await {
+            //TODO: improve error handling
+            defmt::error!("Fatal i2c error occurred: {}", error);
         }
-        
+
+        None
     }
-
-    async fn set_data_pins()
-}
-
-
-fn byte_to_bool_array<const ARR_LEN:usize>(byte:u8){
-    let mut bits:[bool; ARR_LEN] = [
-        
-    ];
 }
