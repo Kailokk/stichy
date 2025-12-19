@@ -1,5 +1,5 @@
-#![no_std]
 #![no_main]
+#![no_std]
 
 mod counter;
 mod display;
@@ -14,7 +14,6 @@ use crate::display::DisplayController;
 
 use {defmt_rtt as _, panic_probe as _};
 
-/// Tell the Boot ROM about our application
 #[link_section = ".start_block"]
 #[used]
 pub static IMAGE_DEF: ImageDef = hal::block::ImageDef::secure_exe();
@@ -30,8 +29,9 @@ async fn main(_spawner: Spawner) {
         DisplayController::init(p.I2C0, p.PIN_4, p.PIN_5).await;
 
     let text = [
-        0b11111111,0b11111111,0b11111111, 0b11111111, 0b11111111, 0b01001000, 0b01100101, 0b01101100, 0b01101100,
-        0b01101111,0b00100001,0b11111111,0b11111111, 0b11111111, 0b11111111, 0b11111111,
+        0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b01001000, 0b01100101,
+        0b01101100, 0b01101100, 0b01101111, 0b00100001, 0b11111111, 0b11111111, 0b11111111,
+        0b11111111, 0b11111111,
     ];
 
     let mut green = 0;
@@ -82,13 +82,12 @@ async fn main(_spawner: Spawner) {
     }
 }
 
-// Program metadata for `picotool info`.
-// This isn't needed, but it's recomended to have these minimal entries.
-#[link_section = ".bi_entries"]
-#[used]
-pub static PICOTOOL_ENTRIES: [embassy_rp::binary_info::EntryAddr; 4] = [
-    embassy_rp::binary_info::rp_program_name!(c"Lcd Example"),
-    embassy_rp::binary_info::rp_program_description!(c"This example tests an lcd"),
-    embassy_rp::binary_info::rp_cargo_version!(),
-    embassy_rp::binary_info::rp_program_build_attribute!(),
-];
+// // This isn't needed, but it's recomended to have these minimal entries.
+// #[link_section = ".bi_entries"]
+// #[used]
+// pub static PICOTOOL_ENTRIES: [embassy_rp::binary_info::EntryAddr; 4] = [
+//     embassy_rp::binary_info::rp_program_name!(c"Lcd Example"),
+//     embassy_rp::binary_info::rp_program_description!(c"This example tests an lcd"),
+//     embassy_rp::binary_info::rp_cargo_version!(),
+//     embassy_rp::binary_info::rp_program_build_attribute!(),
+// ];

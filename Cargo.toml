@@ -3,6 +3,13 @@ name = "stitchy"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "stitchy"
+path = "src/main.rs"
+test = false
+doctest = false
+bench = false
+
 [dependencies]
 cortex-m = "0.7.6"
 cortex-m-rt = "0.7.0"
