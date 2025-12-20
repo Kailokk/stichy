@@ -1,37 +1,40 @@
 use embassy_executor::Spawner;
 use embassy_rp::{
-    Peripherals, bind_interrupts, i2c::{self, Config, InterruptHandler}, peripherals::I2C0
+    bind_interrupts,
+    i2c::{self, Config, Instance, InterruptHandler},
+    peripherals::I2C0,
+    Peripherals,
 };
 use embassy_time::Timer;
 use futures::{select_biased, FutureExt};
 
-use crate::{display::DisplayController, input::{INPUT_CHANNEL, init_input}};
+use crate::{
+    counting_mode::CountingMode, display::DisplayController, input::{INPUT_CHANNEL, init_input}
+};
 
 //TODO: Understand this better and find out how i can move it out of here
 bind_interrupts!(struct Irqs {
     I2C0_IRQ => InterruptHandler<I2C0>;
 });
 
-enum AppState {
-    Initialized,
-    Counter,
+enum AppState<'a, T: Instance> {
+    CountingMode(CountingMode<'a, T>),
 }
 
 pub struct App<'a> {
-    state: AppState,
-    display_controller: DisplayController<'a, I2C0>,
+    state: AppState<'a, I2C0>,
 }
 
 impl<'a> App<'a> {
     pub async fn init(spawner: &Spawner, peripherals: Peripherals) -> Self {
         defmt::debug!("Initiating startup sequence");
 
-      match  init_input(
+        match init_input(
             spawner,
             peripherals.PIN_18.into(),
             peripherals.PIN_17.into(),
             peripherals.PIN_16.into(),
-        ){
+        ) {
             Ok(_) => (),
             //TODO: handle error
             Err(error) => defmt::error!("Error initializing input peripherals: {}", error),
@@ -54,23 +57,31 @@ impl<'a> App<'a> {
         let display_controller = DisplayController::init(i2c_peripheral).await;
 
         Self {
-            state: AppState::Initialized,
-            display_controller,
+            state: AppState::CountingMode(CountingMode::enter(display_controller).await),
         }
     }
 
+    pub async fn run(&mut self) {
+        defmt::debug!("App initialization complete, running program");
 
-    pub async fn run(&mut self){
-        loop{
-            select_biased!{
-                input = INPUT_CHANNEL.receive().fuse() => {
-                    let color:(u8,u8,u8) = match input{
-                        crate::input::InputIdentifier::ButtonA => (255,0,0),
-                        crate::input::InputIdentifier::ButtonB => (0,255,0),
-                        crate::input::InputIdentifier::ButtonC => (0,0,255),
-                    };
-
-                    self.display_controller.set_backlight_color(color.0,color.1, color.2);
+        loop {
+            match &mut self.state {
+                AppState::CountingMode(app) => {
+                    select_biased! {
+                    input = INPUT_CHANNEL.receive().fuse() => {
+                        match input{
+                            crate::input::InputIdentifier::ButtonA => {
+                                app.reset_count().await;
+                            },
+                            crate::input::InputIdentifier::ButtonB => {
+                                app.decrement_count().await;
+                            },
+                            crate::input::InputIdentifier::ButtonC => {
+                                app.increment_count().await;
+                            },
+                        }
+                    }
+                    }
                 }
             }
         }

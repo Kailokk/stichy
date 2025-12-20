@@ -4,6 +4,7 @@
 mod app;
 mod display;
 mod input;
+mod counting_mode;
 
 use embassy_executor::Spawner;
 use embassy_rp::block::ImageDef;

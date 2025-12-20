@@ -23,14 +23,11 @@ impl DisplayChip {
 
 pub struct DisplayDriver<'a, T: Instance> {
     i2c_peripheral: I2c<'a, T, Async>,
+
 }
 
 impl<'a, T: Instance> DisplayDriver<'a, T> {
     pub fn init(i2c_peripheral: I2c<'a, T, Async>) -> Self {
-        let mut config = Config::default();
-
-        config.frequency = 400_000; //400khz
-
         Self { i2c_peripheral }
     }
 
@@ -51,6 +48,11 @@ impl<'a, T: Instance> DisplayDriver<'a, T> {
 
     pub fn write_character(&mut self, character: u8) {
         let word = [0b01000000, character];
+        self.write(DisplayChip::Character, &word);
+    }
+
+    pub fn set_ram_address(&mut self, address: u8) {
+        let word = [0b00000000, address];
         self.write(DisplayChip::Character, &word);
     }
 
