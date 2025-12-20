@@ -1,8 +1,8 @@
-
 use embassy_rp::{
     bind_interrupts,
-    i2c::{self, Async, Config, Error, I2c, InterruptHandler},
+    i2c::{self, Async, Config, Error, I2c, Instance, InterruptHandler, SclPin, SdaPin},
     peripherals::{I2C0, PIN_4, PIN_5},
+    Peri, Peripherals,
 };
 
 enum DisplayChip {
@@ -19,33 +19,24 @@ impl DisplayChip {
     }
 }
 
-pub struct DisplayDriver<'a> {
-    i2c_connection: I2c<'a, I2C0, Async>,
+
+
+pub struct DisplayDriver<'a, T: Instance> {
+    i2c_peripheral: I2c<'a, T, Async>,
 }
 
-impl<'a> DisplayDriver<'a> {
-    pub fn connect(
-        //TODO: Genericise these types if possible
-        peripheral: I2C0,
-        sda_pin: PIN_4,
-        scl_pin: PIN_5,
-    ) -> Self {
-        bind_interrupts!(struct Irqs {
-        I2C0_IRQ => InterruptHandler<I2C0>;
-        });
-
+impl<'a, T: Instance> DisplayDriver<'a, T> {
+    pub fn init(i2c_peripheral: I2c<'a, T, Async>) -> Self {
         let mut config = Config::default();
 
         config.frequency = 400_000; //400khz
 
-        Self {
-            i2c_connection: i2c::I2c::new_async(peripheral, scl_pin, sda_pin, Irqs, config),
-        }
+        Self { i2c_peripheral }
     }
 
     //TODO: Improve design of writing mechanism to allow buffering of instructions
     fn write(&mut self, chip: DisplayChip, word: &[u8]) -> Option<Error> {
-        if let Err(error) = self.i2c_connection.blocking_write(chip.as_bytes(), word) {
+        if let Err(error) = self.i2c_peripheral.blocking_write(chip.as_bytes(), word) {
             //TODO: improve error handling
             defmt::error!("Fatal i2c error occurred: {}", error);
         }
@@ -89,4 +80,3 @@ impl<'a> DisplayDriver<'a> {
         self.write(DisplayChip::Backlight, &word);
     }
 }
-

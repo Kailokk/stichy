@@ -1,15 +1,20 @@
-use embassy_rp::peripherals::{I2C0, PIN_4, PIN_5};
+use embassy_rp::{
+    bind_interrupts,
+    i2c::{self, Async, Config, Error, I2c, Instance, InterruptHandler, SclPin, SdaPin},
+    peripherals::{I2C0, PIN_4, PIN_5},
+    Peri, Peripherals,
+};
 use embassy_time::Timer;
 
 use crate::display::{command::DisplayCommand, driver::DisplayDriver};
 
-pub struct DisplayController<'a> {
-    driver: DisplayDriver<'a>,
+pub struct DisplayController<'a, T:Instance> {
+    driver: DisplayDriver<'a,T>,
 }
 
-impl<'a> DisplayController<'a> {
-    pub async fn init(peripheral: I2C0, sda_pin: PIN_4, scl_pin: PIN_5) -> Self {
-        let mut display_driver = DisplayDriver::connect(peripheral, sda_pin, scl_pin);
+impl<'a, T:Instance> DisplayController<'a, T> {
+    pub async fn init(i2c_peripheral: I2c<'a, T, Async>) -> Self {
+        let mut display_driver = DisplayDriver::init(i2c_peripheral);
         display_driver.write_command(
             DisplayCommand::FunctionSet {
                 display_is_two_lines: true,

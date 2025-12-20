@@ -1,16 +1,15 @@
 #![no_main]
 #![no_std]
 
-mod counter;
+mod app;
 mod display;
+mod input;
 
-use defmt::debug;
 use embassy_executor::Spawner;
 use embassy_rp::block::ImageDef;
-use embassy_rp::{self as hal};
-use embassy_time::Timer;
+use embassy_rp::{self as hal, clocks};
 
-use crate::display::DisplayController;
+use crate::app::App;
 
 use {defmt_rtt as _, panic_probe as _};
 
@@ -19,67 +18,12 @@ use {defmt_rtt as _, panic_probe as _};
 pub static IMAGE_DEF: ImageDef = hal::block::ImageDef::secure_exe();
 
 #[embassy_executor::main]
-async fn main(_spawner: Spawner) {
+async fn main(spawner: Spawner) {
     let p = embassy_rp::init(Default::default());
 
-    debug!("Initiating startup sequence");
-    Timer::after_millis(50).await;
+    let mut app = App::init(&spawner, p).await;
 
-    let mut display_controller: DisplayController =
-        DisplayController::init(p.I2C0, p.PIN_4, p.PIN_5).await;
-
-    let text = [
-        0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b01001000, 0b01100101,
-        0b01101100, 0b01101100, 0b01101111, 0b00100001, 0b11111111, 0b11111111, 0b11111111,
-        0b11111111, 0b11111111,
-    ];
-
-    let mut green = 0;
-    for value in text {
-        display_controller.write_character(value);
-        display_controller.set_backlight_color(0, green, 0);
-        green = green + (255 / text.len() as u8);
-        Timer::after_millis(333).await;
-    }
-
-    Timer::after_secs(5).await;
-
-    loop {
-        for r in 0..=255 {
-            display_controller.set_backlight_color(r, 0, 0);
-            Timer::after_millis(10).await;
-        }
-
-        Timer::after_secs(1).await;
-        for r in (0..=255).rev() {
-            display_controller.set_backlight_color(r, 0, 0);
-            Timer::after_millis(10).await;
-        }
-
-        Timer::after_secs(1).await;
-        for g in 0..=255 {
-            display_controller.set_backlight_color(0, g, 0);
-            Timer::after_millis(10).await;
-        }
-
-        Timer::after_secs(1).await;
-        for g in (0..=255).rev() {
-            display_controller.set_backlight_color(0, g, 0);
-            Timer::after_millis(10).await;
-        }
-
-        Timer::after_secs(1).await;
-        for b in 0..255 {
-            display_controller.set_backlight_color(0, 0, b);
-            Timer::after_millis(10).await;
-        }
-
-        Timer::after_secs(1).await;
-        for b in (0..=255).rev() {
-            display_controller.set_backlight_color(0, 0, b);
-            Timer::after_millis(10).await;
-        }
-    }
+    app.run().await;
 }
 
 // // This isn't needed, but it's recomended to have these minimal entries.
