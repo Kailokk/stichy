@@ -1,25 +1,24 @@
+
+pub mod modes;
+mod app_state;
+
 use embassy_executor::Spawner;
 use embassy_rp::{
     bind_interrupts,
-    i2c::{self, Config, Instance, InterruptHandler},
+    i2c::{self, Config, InterruptHandler},
     peripherals::I2C0,
     Peripherals,
 };
 use embassy_time::Timer;
 use futures::{select_biased, FutureExt};
 
-use crate::{
-    counting_mode::CountingMode, display::DisplayController, input::{INPUT_CHANNEL, init_input}
-};
+use crate::{app::{app_state::AppState, modes::CountingMode}, display::DisplayController, input::{INPUT_CHANNEL, init_input}};
+
 
 //TODO: Understand this better and find out how i can move it out of here
 bind_interrupts!(struct Irqs {
     I2C0_IRQ => InterruptHandler<I2C0>;
 });
-
-enum AppState<'a, T: Instance> {
-    CountingMode(CountingMode<'a, T>),
-}
 
 pub struct App<'a> {
     state: AppState<'a, I2C0>,

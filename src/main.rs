@@ -4,7 +4,8 @@
 mod app;
 mod display;
 mod input;
-mod counting_mode;
+mod memory_controller;
+mod data;
 
 use embassy_executor::Spawner;
 use embassy_rp::block::ImageDef;
@@ -23,6 +24,8 @@ async fn main(spawner: Spawner) {
     let p = embassy_rp::init(Default::default());
 
     let mut app = App::init(&spawner, p).await;
+
+    // p.FLASH.
 
     app.run().await;
 }

@@ -31,6 +31,12 @@ impl<'a, T: Instance> CountingMode<'a, T> {
     }
 
     async fn update_display(&mut self) {
+
+        let mut digits:[u8;4] = [0,0,0,0];
+        digits[3] = self.rows % 10 ;
+        let digit_count = (self.rows /10) + 1;
+        
+
         self.display_controller
             .write_character_at_coord(0b00110000 + self.rows, (5, 0));
     }
