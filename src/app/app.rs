@@ -7,7 +7,7 @@ use embassy_rp::{
 
 use crate::{
     app::{
-        app_dependencies::PeripheralControllers,
+        peripheral_controller::PeripheralController,
         modes::{self, Counting, Initializing},
         AppError,
     },
@@ -23,17 +23,16 @@ bind_interrupts!(struct Irqs {
 pub enum AppState {
     Initializing(Initializing),
     Counting(Counting),
-    Error(modes::Error),
 }
 
 pub struct App<'a> {
-    peripherals: PeripheralControllers<'a, I2C0>,
+    peripherals: PeripheralController<'a, I2C0>,
     app_state: AppState,
     user_data: UserData,
 }
 
 impl<'a> App<'a> {
-    pub async fn new(mut peripherals: PeripheralControllers<'a, I2C0>) -> Self {
+    pub async fn new(mut peripherals: PeripheralController<'a, I2C0>) -> Self {
         let (_, user_data): ((), Result<UserData, MemoryIOError>) = join(
             Initializing::flash_display(&mut peripherals.display_controller),
             peripherals.memory_controller.read_state(),
@@ -66,11 +65,10 @@ impl<'a> App<'a> {
                 Counting::Continue => AppState::Counting(Counting::run(&mut self.peripherals,&mut self.user_data).await),
                 Counting::MoveToError(app_error) => Self::handle_error(app_error, &mut self.peripherals).await,
             },
-            AppState::Error(error) => todo!(),
         }
     }
 
-    async fn handle_error<T:Instance>(app_error: &AppError, mut peripherals:&mut PeripheralControllers<'a,T>) -> AppState {
+    async fn handle_error<T:Instance>(app_error: &AppError, peripherals:&mut PeripheralController<'a,T>) -> AppState {
         match app_error {
             crate::app::AppError::Memory(_) => {
                 modes::Error::display_recoverable_error(app_error, peripherals).await;

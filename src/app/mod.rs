@@ -1,8 +1,8 @@
-mod app_dependencies;
-pub mod modes;
+mod peripheral_controller;
 mod app;
+pub mod modes;
 pub use app::App;
-
+pub use peripheral_controller::PeripheralController;
 use crate::memory_controller::MemoryIOError;
 
 

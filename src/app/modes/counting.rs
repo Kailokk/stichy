@@ -1,7 +1,7 @@
 use embassy_rp::i2c::Instance;
 use embassy_time::Timer;
 
-use crate::{app::{AppError, app_dependencies::PeripheralControllers}, data::UserData, display::DisplayController};
+use crate::{app::{AppError, peripheral_controller::PeripheralController}, data::UserData, display::DisplayController};
 
 static ROWS_WORD: [u8; 5] = [0b01010010, 0b01101111, 0b01110111, 0b01110011, 0b00111010];
 
@@ -12,7 +12,7 @@ pub enum Counting {
 
 
 impl<'a> Counting {
-    pub async fn run<T:Instance>( controllers:&mut PeripheralControllers<'a,T>, user_data:&mut UserData) -> Self {
+    pub async fn run<T:Instance>( controllers:&mut PeripheralController<'a,T>, user_data:&mut UserData) -> Self {
         controllers.display_controller.clear_display();
         controllers.display_controller.return_home();
         controllers.display_controller.set_backlight_color(0, 255, 0);

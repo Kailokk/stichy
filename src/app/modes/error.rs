@@ -1,7 +1,7 @@
 use embassy_rp::i2c::Instance;
 use embassy_time::Timer;
 
-use crate::app::{app_dependencies::PeripheralControllers, AppError};
+use crate::app::{peripheral_controller::PeripheralController, AppError};
 
 pub enum Error {
     Recoverable,
@@ -11,7 +11,7 @@ pub enum Error {
 impl<'a> Error {
     pub async fn display_recoverable_error<T:Instance>(
         error: &AppError,
-        peripheral_controller: &mut PeripheralControllers<'a, T>,
+        peripheral_controller: &mut PeripheralController<'a, T>,
     ) {
         peripheral_controller
             .display_controller
@@ -22,7 +22,7 @@ impl<'a> Error {
 
     pub async fn display_unrecoverable_error<T:Instance>(
         error: &AppError,
-        peripheral_controller: &mut PeripheralControllers<'a, T>,
+        peripheral_controller: &mut PeripheralController<'a, T>,
     ) {
         peripheral_controller
             .display_controller

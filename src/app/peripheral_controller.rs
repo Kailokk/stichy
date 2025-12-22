@@ -4,12 +4,12 @@ use crate::{display::DisplayController, memory_controller::MemoryController};
 
 
 
-pub struct PeripheralControllers<'a, T: Instance>{
+pub struct PeripheralController<'a, T: Instance>{
     pub display_controller: DisplayController<'a, T>,
     pub memory_controller:MemoryController<'a>,
 }
 
-impl<'a, T:Instance> PeripheralControllers<'a,T>{
+impl<'a, T:Instance> PeripheralController<'a,T>{
     pub fn new(display_controller:DisplayController<'a,T>, memory_controller:MemoryController<'a>)->Self{
         Self{
             display_controller,
