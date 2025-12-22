@@ -1,4 +1,3 @@
-use core::pin::Pin;
 
 use embassy_executor::{SpawnError, Spawner};
 use embassy_rp::{

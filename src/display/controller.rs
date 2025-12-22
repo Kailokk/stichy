@@ -1,12 +1,7 @@
-use embassy_rp::{
-    bind_interrupts,
-    i2c::{self, Async, Config, Error, I2c, Instance, InterruptHandler, SclPin, SdaPin},
-    peripherals::{I2C0, PIN_4, PIN_5},
-    Peri, Peripherals,
-};
+use embassy_rp::i2c::{Async, I2c, Instance};
 use embassy_time::Timer;
 
-use crate::display::{command::DisplayCommand, driver::DisplayDriver, set_bit_if_true};
+use crate::display::{command::DisplayCommand, driver::DisplayDriver};
 
 pub struct DisplayController<'a, T: Instance> {
     driver: DisplayDriver<'a, T>,

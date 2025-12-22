@@ -9,22 +9,19 @@ mod data;
 
 use embassy_executor::Spawner;
 use embassy_rp::block::ImageDef;
-use embassy_rp::{self as hal, clocks};
+use embassy_rp::{self as hal};
 
-use crate::app::App;
 use embassy_rp::{
     bind_interrupts,
     flash::Flash,
-    i2c::{self, Config, Instance, InterruptHandler},
+    i2c::{self, Config, InterruptHandler},
     peripherals::I2C0,
-    Peripherals,
 };
 use embassy_time::Timer;
-use futures::{select_biased, FutureExt};
 
 use crate::{
     display::DisplayController,
-    input::{INPUT_CHANNEL, init_input},
+    input::init_input,
     memory_controller::{MemoryController},
 };
 

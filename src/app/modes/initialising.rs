@@ -1,13 +1,9 @@
-use embassy_futures::join;
-use embassy_futures::join::join;
 use embassy_rp::i2c::Instance;
 use embassy_time::Timer;
 
 use crate::{
-    app::{app_dependencies::PeripheralControllers, AppError},
-    data::UserData,
+    app::AppError,
     display::DisplayController,
-    memory_controller::{self, MemoryIOError},
 };
 
 pub enum Initializing {

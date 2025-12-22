@@ -1,13 +1,8 @@
-use core::ops::Deref;
 use embassy_rp::{
-    dma::Channel,
     flash::{Async, Error, Flash},
     peripherals::FLASH,
-    Peri,
 };
-use heapless::Vec;
-use postcard::{from_bytes, to_vec};
-use serde::{Deserialize, Serialize};
+use postcard::from_bytes;
 
 use crate::data::UserData;
 
@@ -21,7 +16,7 @@ pub struct MemoryController<'a> {
 impl<'a> MemoryController<'a> {
     pub fn init(flash_peripheral: Flash<'a, FLASH, Async, FLASH_SIZE>) -> Self {
         MemoryController {
-            flash_peripheral: flash_peripheral,
+            flash_peripheral,
         }
     }
     pub fn save_state(&mut self, state: &UserData) -> Result<(), MemoryIOError> {
@@ -38,7 +33,7 @@ impl<'a> MemoryController<'a> {
         self.flash_peripheral
             .read(FLASH_DATA_OFFSET, data.as_mut_slice())
             .await?;
-        return Ok(from_bytes(&data)?);
+        Ok(from_bytes(&data)?)
     }
 }
 

@@ -1,9 +1,4 @@
-use embassy_rp::{
-    bind_interrupts,
-    i2c::{self, Async, Config, Error, I2c, Instance, InterruptHandler, SclPin, SdaPin},
-    peripherals::{I2C0, PIN_4, PIN_5},
-    Peri, Peripherals,
-};
+use embassy_rp::i2c::{Async, Error, I2c, Instance};
 
 enum DisplayChip {
     Character,

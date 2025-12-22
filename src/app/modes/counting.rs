@@ -1,7 +1,7 @@
 use embassy_rp::i2c::Instance;
 use embassy_time::Timer;
 
-use crate::{app::{AppError, app_dependencies::PeripheralControllers}, data::UserData, display::DisplayController, input::InputIdentifier, memory_controller::MemoryIOError};
+use crate::{app::{AppError, app_dependencies::PeripheralControllers}, data::UserData, display::DisplayController};
 
 static ROWS_WORD: [u8; 5] = [0b01010010, 0b01101111, 0b01110111, 0b01110011, 0b00111010];
 
@@ -27,16 +27,16 @@ impl<'a> Counting {
 
 
         let mut exit_loop = false;
-        while exit_loop == false{
+        while !exit_loop{
             //TODO: Counting main loop
             exit_loop = true;
         }
 
-        if let Err(error) = controllers.memory_controller.save_state(&user_data){
+        if let Err(error) = controllers.memory_controller.save_state(user_data){
             return Self::MoveToError(error.into());
         }
 
-        return Self::Continue;
+        Self::Continue
 
     }
 

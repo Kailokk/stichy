@@ -1,14 +1,9 @@
-use embassy_executor::Spawner;
 use embassy_futures::join::join;
 use embassy_rp::{
     bind_interrupts,
-    flash::Flash,
-    i2c::{self, Config, Instance, InterruptHandler},
+    i2c::{Instance, InterruptHandler},
     peripherals::I2C0,
-    Peripherals,
 };
-use embassy_time::Timer;
-use futures::{select_biased, FutureExt};
 
 use crate::{
     app::{
@@ -17,9 +12,7 @@ use crate::{
         AppError,
     },
     data::UserData,
-    display::DisplayController,
-    input::{init_input, INPUT_CHANNEL},
-    memory_controller::{self, MemoryController, MemoryIOError},
+    memory_controller::MemoryIOError,
 };
 
 //TODO: Understand this better and find out how i can move it out of here
@@ -59,7 +52,7 @@ impl<'a> App<'a> {
         Self {
             app_state: AppState::Initializing(initial_state),
             peripherals,
-            user_data: user_data,
+            user_data,
         }
     }
 
@@ -80,7 +73,7 @@ impl<'a> App<'a> {
     async fn handle_error<T:Instance>(app_error: &AppError, mut peripherals:&mut PeripheralControllers<'a,T>) -> AppState {
         match app_error {
             crate::app::AppError::Memory(_) => {
-                modes::Error::display_recoverable_error(&app_error, &mut peripherals).await;
+                modes::Error::display_recoverable_error(app_error, peripherals).await;
                 AppState::Counting(Counting::Continue)
             }
         }

@@ -1,14 +1,7 @@
-use embassy_futures::join;
-use embassy_futures::join::join;
 use embassy_rp::i2c::Instance;
 use embassy_time::Timer;
 
-use crate::{
-    app::{app::AppState, app_dependencies::PeripheralControllers, AppError},
-    data::UserData,
-    display::DisplayController,
-    memory_controller::{self, MemoryIOError},
-};
+use crate::app::{app_dependencies::PeripheralControllers, AppError};
 
 pub enum Error {
     Recoverable,
