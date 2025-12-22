@@ -2,19 +2,27 @@ use serde::{Deserialize, Serialize};
 
 
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
-pub struct AppData{
-    //160 bytes
-    pub pages:[Page; 10],
-    // 4 bytes
-    pub last_page:usize,
-    // 3 bytes
-    pub background_color:(u8,u8,u8)
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
+pub struct UserData{
+    pages:[Page; 10],
+    current_page:usize,
+    background_color:(u8,u8,u8)
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+impl UserData{
+    pub fn current_page(&self)->&Page{
+        &self.pages[self.current_page]
+    }
+
+    pub fn current_page_mut(&mut self)->&mut Page{
+        &mut self.pages[self.current_page]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
 pub struct Page{
     pub name:[u8;8],
-    pub row_count:u32,
+    //TODO: Increase size when display can handle it
+    pub row_count:u8,
     pub stitch_count:u32,
 }

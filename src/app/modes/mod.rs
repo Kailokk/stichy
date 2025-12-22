@@ -1,3 +1,7 @@
-mod counting_mode;
+mod counting;
+mod initialising;
+mod error;
 
-pub use counting_mode::CountingMode;
+pub use initialising::Initializing;
+pub use counting::Counting;
+pub use error::Error;
