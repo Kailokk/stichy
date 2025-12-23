@@ -1,6 +1,8 @@
+use cortex_m::register::control;
 use embassy_rp::i2c::Instance;
 use embassy_time::Timer;
 use futures::{select_biased, FutureExt};
+use heapless::String;
 
 use crate::{
     app::{peripheral_controller::PeripheralController, AppError},
@@ -29,6 +31,7 @@ impl<'a> Counting {
             .set_backlight_color(0, 255, 0);
 
         Timer::after_millis(3).await;
+        controllers.display_controller.move_cursor_to_coord((0,1));
         for character in ROWS_WORD {
             controllers.display_controller.write_character(character);
         }
@@ -41,16 +44,8 @@ impl<'a> Counting {
             select_biased! {
                 button = INPUT_CHANNEL.receive().fuse() => {
                     match button{
-                        crate::input::InputIdentifier::ButtonA => {
-                            defmt::debug!("Saving user data to flash: {}", user_data);
-                            if let Err(error) = controllers.memory_controller.save_state(user_data){
-                            return Self::MoveToError(error.into());
-                        }
-                    }
-                        crate::input::InputIdentifier::ButtonB => {let read_data =controllers.memory_controller.read_state().await.unwrap(); 
-                                defmt::debug!("Read data from flash: {}", read_data);
-                            
-                            ()},//Self::decrement_count(user_data),
+                        crate::input::InputIdentifier::ButtonA => exit_loop = true,
+                        crate::input::InputIdentifier::ButtonB => Self::decrement_count(user_data),
                         crate::input::InputIdentifier::ButtonC => Self::increment_count(user_data),
                     }
                     Self::update_display(&mut controllers.display_controller, user_data).await;
@@ -72,12 +67,13 @@ impl<'a> Counting {
         display_controller: &mut DisplayController<'a, T>,
         user_data: &mut UserData,
     ) {
-        // let mut digits:[u8;4] = [0,0,0,0];
-        // digits[3] = self.controllers.user_data()rows % 10 ;
-        // let digit_count = (self.rows /10) + 1;
+        let row_count = user_data.current_page().row_count;
+        let test:String<4> = String::from(row_count);
 
-        display_controller
-            .write_character_at_coord(0b00110000 + user_data.current_page().row_count, (5, 0));
+        display_controller.move_cursor_to_coord((5,1));
+        for digit in test.as_bytes(){
+            display_controller.write_character(*digit);
+        }
     }
 
     fn increment_count(user_data: &mut UserData) {
@@ -86,9 +82,5 @@ impl<'a> Counting {
 
     fn decrement_count(user_data: &mut UserData) {
         user_data.current_page_mut().row_count -= 1;
-    }
-
-    fn reset_count(user_data: &mut UserData) {
-        user_data.current_page_mut().row_count = 0;
     }
 }

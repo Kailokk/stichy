@@ -5,7 +5,6 @@ use crate::display::{command::DisplayCommand, driver::DisplayDriver};
 
 pub struct DisplayController<'a, T: Instance> {
     driver: DisplayDriver<'a, T>,
-        cursor_position:u8,
 }
 
 impl<'a, T: Instance> DisplayController<'a, T> {
@@ -51,7 +50,6 @@ impl<'a, T: Instance> DisplayController<'a, T> {
 
         Self {
             driver: display_driver,
-            cursor_position:0
         }
     }
 
@@ -63,7 +61,14 @@ impl<'a, T: Instance> DisplayController<'a, T> {
     //TODO: separate this from coordinate mode
     pub fn write_character(&mut self, byte: u8) {
         self.driver.write_character(byte);
-        self.cursor_position +=1;
+    }
+
+    pub fn move_cursor_to_coord(&mut self,coord:(u8,u8)) {
+        let mut ram_address = 0b10000000 + coord.0;
+        if coord.1 > 0{
+            ram_address |= 0b01000000;
+        }
+        self.driver.set_ram_address(ram_address);
     }
 
     pub fn write_character_at_coord(&mut self, byte: u8,coord:(u8,u8)) {
@@ -73,13 +78,11 @@ impl<'a, T: Instance> DisplayController<'a, T> {
         }
         self.driver.set_ram_address(ram_address);
         self.driver.write_character(byte);
-        self.cursor_position = (coord.0 * coord.1) + 1;
     }
 
     pub fn clear_display(&mut self) {
         self.driver
             .write_command(DisplayCommand::ClearDisplay.to_byte());
-        self.cursor_position = 0;
     }
 
     pub fn set_writing_shift_mode(&mut self){

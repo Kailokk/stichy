@@ -22,7 +22,5 @@ impl UserData{
 #[derive(Serialize, Deserialize, Debug, PartialEq, Default, defmt::Format)]
 pub struct Page{
     pub name:[u8;8],
-    //TODO: Increase size when display can handle it
-    pub row_count:u8,
-    pub stitch_count:u32,
+    pub row_count:u16,
 }
