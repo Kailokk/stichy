@@ -49,7 +49,7 @@ impl<'a> MemoryController<'a> {
     }
 }
 
-#[derive(thiserror::Error, Debug, defmt::Format)]
+#[derive(thiserror::Error, Debug, defmt::Format, PartialEq, Eq)]
 #[error("Memory IO Error: {0}")]
 pub enum MemoryIOError {
     SerializationError(#[from] postcard::Error),

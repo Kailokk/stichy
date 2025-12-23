@@ -57,23 +57,27 @@ impl<'a, T: Instance> DisplayController<'a, T> {
         self.driver.set_backlight_color(red, green, blue);
     }
 
-    
     //TODO: separate this from coordinate mode
     pub fn write_character(&mut self, byte: u8) {
         self.driver.write_character(byte);
     }
 
-    pub fn move_cursor_to_coord(&mut self,coord:(u8,u8)) {
+    pub async fn write_multiple_characters<const SIZE: usize>(&mut self, bytes: &[u8; SIZE]) {
+        self.driver.write_characters(bytes).await;
+        Timer::after_millis(3).await
+    }
+
+    pub fn move_cursor_to_coord(&mut self, coord: (u8, u8)) {
         let mut ram_address = 0b10000000 + coord.0;
-        if coord.1 > 0{
+        if coord.1 > 0 {
             ram_address |= 0b01000000;
         }
         self.driver.set_ram_address(ram_address);
     }
 
-    pub fn write_character_at_coord(&mut self, byte: u8,coord:(u8,u8)) {
+    pub fn write_character_at_coord(&mut self, byte: u8, coord: (u8, u8)) {
         let mut ram_address = 0b10000000 + coord.0;
-        if coord.1 > 0{
+        if coord.1 > 0 {
             ram_address |= 0b01000000;
         }
         self.driver.set_ram_address(ram_address);
@@ -83,20 +87,48 @@ impl<'a, T: Instance> DisplayController<'a, T> {
     pub fn clear_display(&mut self) {
         self.driver
             .write_command(DisplayCommand::ClearDisplay.to_byte());
+        self.set_cursor(false, false);
     }
 
-    pub fn set_writing_shift_mode(&mut self){
-        self.driver.write_command(DisplayCommand::SetEntryMode { cursor_move_rtl: false, can_shift: true }.to_byte());
-        
+    pub fn clear_display_section(&mut self, from_x: u8, to_x: u8, y: u8) {
+        self.move_cursor_to_coord((from_x, y));
+        for _ in from_x..=to_x {
+            self.driver.write_character(0b11111110);
+        }
     }
 
-    pub fn set_writing_coordinate_mode(&mut self){
-        self.driver.write_command(DisplayCommand::SetEntryMode { cursor_move_rtl: false, can_shift: false }.to_byte());
+    pub fn set_writing_shift_mode(&mut self) {
+        self.driver.write_command(
+            DisplayCommand::SetEntryMode {
+                cursor_move_rtl: false,
+                can_shift: true,
+            }
+            .to_byte(),
+        );
+    }
+
+    pub fn set_writing_coordinate_mode(&mut self) {
+        self.driver.write_command(
+            DisplayCommand::SetEntryMode {
+                cursor_move_rtl: false,
+                can_shift: false,
+            }
+            .to_byte(),
+        );
     }
 
     pub fn return_home(&mut self) {
-        self.driver
-            .write_command(DisplayCommand::ReturnHome.to_byte());
+        self.move_cursor_to_coord((0, 0));
     }
 
+    pub fn set_cursor(&mut self, active: bool, blinking: bool) {
+        self.driver.write_command(
+            DisplayCommand::DisplayOnOffControl {
+                display_on: true,
+                cursor_on: active,
+                cursor_blinking: blinking,
+            }
+            .to_byte(),
+        );
+    }
 }

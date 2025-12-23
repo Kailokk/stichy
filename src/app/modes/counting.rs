@@ -1,20 +1,21 @@
-use cortex_m::register::control;
 use embassy_rp::i2c::Instance;
 use embassy_time::Timer;
 use futures::{select_biased, FutureExt};
 use heapless::String;
 
 use crate::{
-    app::{peripheral_controller::PeripheralController, AppError},
+    app::{AppError, peripheral_controller::PeripheralController},
     data::UserData,
     display::DisplayController,
-    input::INPUT_CHANNEL,
+    input::INPUT_CHANNEL, utility::string_as_bytes,
 };
 
-static ROWS_WORD: [u8; 5] = [0b01010010, 0b01101111, 0b01110111, 0b01110011, 0b00111010];
+static ROWS_WORD: [u8; 5] = string_as_bytes("Rows:");
 
+#[derive(PartialEq, Eq, defmt::Format)]
 pub enum Counting {
     Continue,
+    MoveToMenu,
     MoveToError(AppError),
 }
 
@@ -28,23 +29,23 @@ impl<'a> Counting {
         controllers.display_controller.return_home();
         controllers
             .display_controller
-            .set_backlight_color(0, 255, 0);
+            .set_backlight_color(0, 200, 255);
 
         Timer::after_millis(3).await;
-        controllers.display_controller.move_cursor_to_coord((0,1));
-        for character in ROWS_WORD {
-            controllers.display_controller.write_character(character);
-        }
+        controllers.display_controller.move_cursor_to_coord((0, 1));
+        controllers.display_controller.write_multiple_characters(&ROWS_WORD).await;
+        
+        controllers.display_controller.move_cursor_to_coord((0, 0));
+        controllers.display_controller.write_multiple_characters(&user_data.current_page().name).await;
 
         Self::update_display(&mut controllers.display_controller, user_data).await;
 
-        let mut exit_loop = false;
-
-       while !exit_loop{
+        let mut next_state = Self::Continue;
+        while next_state == Self::Continue {
             select_biased! {
                 button = INPUT_CHANNEL.receive().fuse() => {
                     match button{
-                        crate::input::InputIdentifier::ButtonA => exit_loop = true,
+                        crate::input::InputIdentifier::ButtonA => next_state = Self::MoveToMenu,
                         crate::input::InputIdentifier::ButtonB => Self::decrement_count(user_data),
                         crate::input::InputIdentifier::ButtonC => Self::increment_count(user_data),
                     }
@@ -53,14 +54,13 @@ impl<'a> Counting {
                 //TODO: Find better wait condition
                 _ = Timer::after_secs(500).fuse() => {}
             }
-            
         }
 
         if let Err(error) = controllers.memory_controller.save_state(user_data) {
             return Self::MoveToError(error.into());
         }
 
-        Self::Continue
+        next_state
     }
 
     async fn update_display<T: Instance>(
@@ -68,10 +68,10 @@ impl<'a> Counting {
         user_data: &mut UserData,
     ) {
         let row_count = user_data.current_page().row_count;
-        let test:String<4> = String::from(row_count);
+        let row_count_string: String<4> = String::from(row_count);
 
-        display_controller.move_cursor_to_coord((5,1));
-        for digit in test.as_bytes(){
+        display_controller.move_cursor_to_coord((5, 1));
+        for digit in row_count_string.as_bytes() {
             display_controller.write_character(*digit);
         }
     }

@@ -7,17 +7,18 @@ use embassy_rp::{
 
 use crate::{
     app::{
-        peripheral_controller::PeripheralController,
-        modes::{self, Counting, Initializing},
-        AppError,
+        AppError, modes::{self, Counting, Initializing, Menu, Rename}, peripheral_controller::PeripheralController
     },
     data::UserData,
     memory_controller::MemoryIOError,
 };
 
+#[derive(defmt::Format)]
 pub enum AppState {
     Initializing(Initializing),
     Counting(Counting),
+    Menu(Menu),
+    Rename(Rename)
 }
 
 pub struct App<'a> {
@@ -52,6 +53,7 @@ impl<'a> App<'a> {
     }
 
     pub async fn step(&mut self) {
+        defmt::debug!("Activating state: {}", self.app_state);
         self.app_state = match &self.app_state {
             AppState::Initializing(state) => match state {
                 Initializing::MoveToCounting => AppState::Counting(Counting::Continue),
@@ -59,7 +61,19 @@ impl<'a> App<'a> {
             },
             AppState::Counting(counting_mode) => match counting_mode {
                 Counting::Continue => AppState::Counting(Counting::run(&mut self.peripherals,&mut self.user_data).await),
+                Counting::MoveToMenu => AppState::Menu(Menu::Continue),
                 Counting::MoveToError(app_error) => Self::handle_error(app_error, &mut self.peripherals).await,
+            },
+            AppState::Menu(menu) => match menu{
+                Menu::Continue => AppState::Menu(Menu::run(&mut self.peripherals).await),
+                Menu::MoveToCounting => AppState::Counting(Counting::Continue),
+                Menu::MoveToRename => AppState::Rename(Rename::Continue),
+                Menu::MoveToError(app_error) => Self::handle_error(app_error, &mut self.peripherals).await,
+            },
+            AppState::Rename(rename) => match rename{
+                Rename::Continue => AppState::Rename(Rename::run(&mut self.peripherals,&mut self.user_data).await),
+                Rename::MoveToCounting => AppState::Counting(Counting::Continue),
+                Rename::MoveToError(app_error) => Self::handle_error(app_error, &mut self.peripherals).await,
             },
         }
     }

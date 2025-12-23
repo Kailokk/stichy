@@ -19,8 +19,14 @@ impl UserData{
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Default, defmt::Format)]
+#[derive(Serialize, Deserialize,  Debug, PartialEq, defmt::Format)]
 pub struct Page{
-    pub name:[u8;8],
+    pub name:[u8;10],
     pub row_count:u16,
+}
+
+impl Default for Page{
+    fn default() -> Self {
+        Self { name: [0b00100000;10], row_count: Default::default() }
+    }
 }

@@ -31,6 +31,7 @@ impl<'a, T: Instance> DisplayDriver<'a, T> {
         if let Err(error) = self.i2c_peripheral.blocking_write(chip.as_bytes(), word) {
             //TODO: improve error handling
             defmt::error!("Fatal i2c error occurred: {}", error);
+            return Some(error)
         }
 
         None
@@ -44,6 +45,21 @@ impl<'a, T: Instance> DisplayDriver<'a, T> {
     pub fn write_character(&mut self, character: u8) {
         let word = [0b01000000, character];
         self.write(DisplayChip::Character, &word);
+    }
+
+    pub async fn write_characters<const SIZE:usize>(&mut self, characters: &[u8; SIZE])->Option<Error> {
+        let mut control_bytes:[u8;SIZE] = [0b11000000; SIZE];
+        control_bytes[SIZE - 1] = 0b01000000;
+        let instruction_iterator = control_bytes.into_iter().zip(characters).flat_map(|(control_byte,data)|{
+            [control_byte,*data]
+        });//.enumerate().inspect(|(index,byte)| defmt::debug!("Byte {}: {:b} or {}",index, byte, char::from(*byte))).map(|item|item.1);
+        if let Err(error) = self.i2c_peripheral.write_async(DisplayChip::Character.as_bytes(), instruction_iterator).await {
+            //TODO: improve error handling
+            defmt::error!("Fatal i2c error occurred when writing multiple characters: {}", error);
+            return Some(error)
+        }
+
+        None
     }
 
     pub fn set_ram_address(&mut self, address: u8) {

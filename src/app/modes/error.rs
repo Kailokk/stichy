@@ -3,6 +3,7 @@ use embassy_time::Timer;
 
 use crate::app::{peripheral_controller::PeripheralController, AppError};
 
+#[derive(defmt::Format)]
 pub enum Error {
     Recoverable,
     Unrecoverable,

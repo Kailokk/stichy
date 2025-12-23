@@ -6,6 +6,7 @@ mod display;
 mod input;
 mod memory_controller;
 mod data;
+mod utility;
 
 use embassy_executor::Spawner;
 use embassy_rp::block::ImageDef;
