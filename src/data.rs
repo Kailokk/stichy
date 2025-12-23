@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default, defmt::Format)]
 pub struct UserData{
     pages:[Page; 10],
     current_page:usize,
@@ -19,7 +19,7 @@ impl UserData{
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default, defmt::Format)]
 pub struct Page{
     pub name:[u8;8],
     //TODO: Increase size when display can handle it

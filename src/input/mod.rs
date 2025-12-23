@@ -22,7 +22,6 @@ async fn input_task(pin: Peri<'static, AnyPin>, button_identifier: InputIdentifi
     let mut input = Input::new(pin, Pull::None);
     loop {
         input.wait_for_low().await;
-        defmt::debug!("Button Press Registered: {}", button_identifier);
         INPUT_CHANNEL.send(button_identifier).await;
         Timer::after_millis(100).await;
         input.wait_for_high().await;

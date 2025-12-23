@@ -8,6 +8,6 @@ use crate::memory_controller::MemoryIOError;
 
 #[derive(Debug,thiserror::Error, defmt::Format)]
 #[error("App Error: {0}")]
-enum AppError{
+pub enum AppError{
     Memory(#[from] MemoryIOError)
 }

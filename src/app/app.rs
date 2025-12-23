@@ -15,11 +15,6 @@ use crate::{
     memory_controller::MemoryIOError,
 };
 
-//TODO: Understand this better and find out how i can move it out of here
-bind_interrupts!(struct Irqs {
-    I2C0_IRQ => InterruptHandler<I2C0>;
-});
-
 pub enum AppState {
     Initializing(Initializing),
     Counting(Counting),
@@ -43,6 +38,7 @@ impl<'a> App<'a> {
         let user_data = match user_data {
             Ok(data) => data,
             Err(error) => {
+                defmt::error!("Error reading saved state data: {}", error);
                 initial_state = Initializing::MoveToError(error.into());
                 Default::default()
             }
