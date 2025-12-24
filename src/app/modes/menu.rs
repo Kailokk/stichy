@@ -27,6 +27,7 @@ pub enum Menu {
     Continue,
     MoveToRename,
     MoveToCounting,
+    MoveToProjectSelect,
     MoveToError(AppError),
 }
 
@@ -74,8 +75,8 @@ impl<'a> Menu {
         next_state
     }
 
-    const PROJECTS: [u8; 8] = string_as_bytes("Projects");
     const NAME_PROJECT: [u8; 12] = string_as_bytes("Name Project");
+    const PROJECTS: [u8; 11] = string_as_bytes("Project Sel");
     const COUNT_ROWS: [u8; 10] = string_as_bytes("Count Rows");
 
     async fn write_menu_option<T: Instance>(
@@ -123,7 +124,7 @@ impl<'a> Menu {
 
     fn enter_state(current_menu_option: usize) -> Self {
         match MENU_ORDER[current_menu_option] {
-            MenuOption::ProjectSelect => todo!("Implement project select"),
+            MenuOption::ProjectSelect => Self::MoveToProjectSelect,
             MenuOption::NameCurrentProject => Self::MoveToRename,
             MenuOption::RowCounting => Self::MoveToCounting,
         }

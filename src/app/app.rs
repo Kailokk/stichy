@@ -4,21 +4,27 @@ use embassy_rp::{
     i2c::{Instance, InterruptHandler},
     peripherals::I2C0,
 };
+use embassy_time::Timer;
 
 use crate::{
     app::{
-        AppError, modes::{self, Counting, Initializing, Menu, Rename}, peripheral_controller::PeripheralController
+        modes::{self, Counting, Initializing, Menu, ProjectList, Rename},
+        peripheral_controller::PeripheralController,
+        AppError,
     },
     data::UserData,
     memory_controller::MemoryIOError,
 };
+
+use crate::data::DEFAULT_NAME_CHARACTER;
 
 #[derive(defmt::Format)]
 pub enum AppState {
     Initializing(Initializing),
     Counting(Counting),
     Menu(Menu),
-    Rename(Rename)
+    Rename(Rename),
+    ProjectList(ProjectList),
 }
 
 pub struct App<'a> {
@@ -37,13 +43,24 @@ impl<'a> App<'a> {
 
         let mut initial_state = Initializing::MoveToCounting;
         let user_data = match user_data {
-            Ok(data) => data,
+            Ok(data) => {
+                if data
+                    .all_pages()
+                    .iter()
+                    .all(|page| page.name.ends_with(&[DEFAULT_NAME_CHARACTER]))
+                {
+                    initial_state = Initializing::MoveToEnterName;
+                }
+                data
+            }
             Err(error) => {
                 defmt::error!("Error reading saved state data: {}", error);
                 initial_state = Initializing::MoveToError(error.into());
                 Default::default()
             }
         };
+        defmt::debug!("Default char: {}", DEFAULT_NAME_CHARACTER);
+        defmt::debug!("User Data: {}", user_data);
 
         Self {
             app_state: AppState::Initializing(initial_state),
@@ -57,33 +74,68 @@ impl<'a> App<'a> {
         self.app_state = match &self.app_state {
             AppState::Initializing(state) => match state {
                 Initializing::MoveToCounting => AppState::Counting(Counting::Continue),
-                Initializing::MoveToError(app_error) => Self::handle_error(app_error, &mut self.peripherals).await,
+                Initializing::MoveToError(app_error) => {
+                    Self::handle_error(app_error, &mut self.peripherals).await
+                }
+                Initializing::MoveToEnterName => AppState::Rename(Rename::Continue),
             },
             AppState::Counting(counting_mode) => match counting_mode {
-                Counting::Continue => AppState::Counting(Counting::run(&mut self.peripherals,&mut self.user_data).await),
+                Counting::Continue => AppState::Counting(
+                    Counting::run(&mut self.peripherals, &mut self.user_data).await,
+                ),
                 Counting::MoveToMenu => AppState::Menu(Menu::Continue),
-                Counting::MoveToError(app_error) => Self::handle_error(app_error, &mut self.peripherals).await,
+                Counting::MoveToError(app_error) => {
+                    Self::handle_error(app_error, &mut self.peripherals).await
+                }
             },
-            AppState::Menu(menu) => match menu{
+            AppState::Menu(menu) => match menu {
                 Menu::Continue => AppState::Menu(Menu::run(&mut self.peripherals).await),
                 Menu::MoveToCounting => AppState::Counting(Counting::Continue),
                 Menu::MoveToRename => AppState::Rename(Rename::Continue),
-                Menu::MoveToError(app_error) => Self::handle_error(app_error, &mut self.peripherals).await,
+                Menu::MoveToError(app_error) => {
+                    Self::handle_error(app_error, &mut self.peripherals).await
+                }
+                Menu::MoveToProjectSelect => AppState::ProjectList(ProjectList::Continue),
             },
-            AppState::Rename(rename) => match rename{
-                Rename::Continue => AppState::Rename(Rename::run(&mut self.peripherals,&mut self.user_data).await),
+            AppState::Rename(rename) => match rename {
+                Rename::Continue => {
+                    AppState::Rename(Rename::run(&mut self.peripherals, &mut self.user_data).await)
+                }
                 Rename::MoveToCounting => AppState::Counting(Counting::Continue),
-                Rename::MoveToError(app_error) => Self::handle_error(app_error, &mut self.peripherals).await,
+                Rename::MoveToError(app_error) => {
+                    Self::handle_error(app_error, &mut self.peripherals).await
+                }
+            },
+            AppState::ProjectList(project_list) => match project_list {
+                ProjectList::Continue => AppState::ProjectList(
+                    ProjectList::run(&mut self.peripherals, &mut self.user_data).await,
+                ),
+                ProjectList::MoveToCounting => AppState::Counting(Counting::Continue),
+                ProjectList::MoveToError(app_error) => {
+                    Self::handle_error(app_error, &mut self.peripherals).await
+                }
+                ProjectList::MoveToName => AppState::Rename(Rename::Continue),
             },
         }
     }
 
-    async fn handle_error<T:Instance>(app_error: &AppError, peripherals:&mut PeripheralController<'a,T>) -> AppState {
+    async fn handle_error<T: Instance>(
+        app_error: &AppError,
+        peripherals: &mut PeripheralController<'a, T>,
+    ) -> AppState {
         match app_error {
-            crate::app::AppError::Memory(_) => {
+            crate::app::AppError::Memory(error) => {
+                defmt::debug!("Memory error: {}", error);
                 modes::Error::display_recoverable_error(app_error, peripherals).await;
-                AppState::Counting(Counting::Continue)
+                AppState::Rename(Rename::Continue)
             }
+            AppError::CouldNotAddNew => {
+                defmt::debug!("Could not add new option to project list");
+                modes::Error::display_unrecoverable_error(app_error, peripherals).await;
+                loop{
+                    Timer::after_secs(3000).await
+                }
+            },
         }
     }
 }

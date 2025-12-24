@@ -1,7 +1,7 @@
 use embassy_rp::i2c::Instance;
 use embassy_time::Timer;
 
-use crate::app::{peripheral_controller::PeripheralController, AppError};
+use crate::{app::{AppError, peripheral_controller::PeripheralController}, utility::string_as_bytes};
 
 #[derive(defmt::Format)]
 pub enum Error {
@@ -28,10 +28,26 @@ impl<'a> Error {
         peripheral_controller
             .display_controller
             .set_backlight_color(255, 0, 0);
+        peripheral_controller.display_controller.clear_display();
+        Timer::after_millis(30).await;
+        peripheral_controller.display_controller.return_home();
+        Timer::after_millis(30).await;
+        peripheral_controller.display_controller.write_multiple_characters(&string_as_bytes::<11>("FATAL ERROR")).await;
+        Timer::after_millis(30).await;
+        peripheral_controller.display_controller.move_cursor_to_coord((0,1));
+        Timer::after_millis(30).await;
+        peripheral_controller.display_controller.write_multiple_characters(&string_as_bytes::<13>("PLEASE REBOOT")).await;
+        Timer::after_millis(30).await;
         defmt::error!("Unrecoverable error hit: {}", error);
         loop {
-            Timer::after_secs(30).await;
-            // restart device
+            peripheral_controller
+            .display_controller
+            .set_backlight_color(255, 0, 0);
+            Timer::after_secs(1).await;
+            peripheral_controller
+            .display_controller
+            .set_backlight_color(155, 100, 0);
+            Timer::after_secs(1).await;
         }
     }
 }

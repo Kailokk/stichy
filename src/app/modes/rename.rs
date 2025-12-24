@@ -31,7 +31,7 @@ impl<'a> Rename {
         user_data: &mut UserData,
     ) -> Self {
         defmt::debug!("Entering Menu State");
-       controllers.display_controller.set_cursor(true, true);
+        controllers.display_controller.set_cursor(true, true);
         controllers.display_controller.clear_display();
         controllers.display_controller.return_home();
         //TODO: Find cause of weird timing error
@@ -40,12 +40,18 @@ impl<'a> Rename {
             .display_controller
             .set_backlight_color(0, 0, 255);
 
-        controllers.display_controller.move_cursor_to_coord((10, 0));
+        Timer::after_millis(33).await;
+        controllers
+            .display_controller
+            .write_multiple_characters(&string_as_bytes::<16>("Enter Proj Name:"))
+            .await;
+        Timer::after_millis(33).await;
+        controllers.display_controller.move_cursor_to_coord((10, 1));
         controllers
             .display_controller
             .write_multiple_characters(&[0b0111_1111; 6])
             .await;
-        controllers.display_controller.move_cursor_to_coord((0, 0));
+        controllers.display_controller.move_cursor_to_coord((0, 1));
 
         let name_value: &mut [u8; 10] = &mut user_data.current_page_mut().name;
         let mut character: u8 = START_CHARACTER;
@@ -99,7 +105,7 @@ impl<'a> Rename {
         index: u8,
         display_controller: &mut DisplayController<'a, T>,
     ) {
-        display_controller.write_character_at_coord(character, (index, 0));
-        display_controller.move_cursor_to_coord((index, 0));
+        display_controller.write_character_at_coord(character, (index, 1));
+        display_controller.move_cursor_to_coord((index, 1));
     }
 }

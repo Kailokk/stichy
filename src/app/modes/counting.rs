@@ -81,6 +81,6 @@ impl<'a> Counting {
     }
 
     fn decrement_count(user_data: &mut UserData) {
-        user_data.current_page_mut().row_count -= 1;
+        user_data.current_page_mut().row_count = user_data.current_page_mut().row_count.checked_sub(1).unwrap_or(0);
     }
 }
