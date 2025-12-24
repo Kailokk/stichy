@@ -8,9 +8,7 @@ use embassy_time::Timer;
 
 use crate::{
     app::{
-        modes::{self, Counting, Initializing, Menu, ProjectList, Rename},
-        peripheral_controller::PeripheralController,
-        AppError,
+        AppError, modes::{self, Counting, Initializing, Menu, ProjectList, Rename, StitchCounting}, peripheral_controller::PeripheralController
     },
     data::UserData,
     memory_controller::MemoryIOError,
@@ -25,6 +23,7 @@ pub enum AppState {
     Menu(Menu),
     Rename(Rename),
     ProjectList(ProjectList),
+    StitchCounting(StitchCounting)
 }
 
 pub struct App<'a> {
@@ -96,6 +95,7 @@ impl<'a> App<'a> {
                     Self::handle_error(app_error, &mut self.peripherals).await
                 }
                 Menu::MoveToProjectSelect => AppState::ProjectList(ProjectList::Continue),
+                Menu::MoveToStitchCounting => AppState::StitchCounting(StitchCounting::Continue),
             },
             AppState::Rename(rename) => match rename {
                 Rename::Continue => {
@@ -115,6 +115,11 @@ impl<'a> App<'a> {
                     Self::handle_error(app_error, &mut self.peripherals).await
                 }
                 ProjectList::MoveToName => AppState::Rename(Rename::Continue),
+            },
+            AppState::StitchCounting(stitch_counting) => match stitch_counting{
+                StitchCounting::Continue => AppState::StitchCounting(StitchCounting::run(&mut self.peripherals).await),
+                StitchCounting::MoveToMenu => AppState::Menu(Menu::Continue),
+                StitchCounting::MoveToError(app_error) => Self::handle_error(app_error, &mut self.peripherals).await,
             },
         }
     }

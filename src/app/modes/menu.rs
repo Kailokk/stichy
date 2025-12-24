@@ -11,15 +11,18 @@ use crate::{
     utility::{string_as_bytes, wrapped_deincrement, wrapped_increment},
 };
 
-static MENU_ORDER: [MenuOption; 3] = [
+static MENU_ORDER: [MenuOption; 4] = [
     MenuOption::RowCounting,
+    MenuOption::StitchCounting,
     MenuOption::ProjectSelect,
     MenuOption::NameCurrentProject,
+
 ];
 enum MenuOption {
     ProjectSelect,
     NameCurrentProject,
     RowCounting,
+    StitchCounting,
 }
 
 #[derive(PartialEq, Eq, defmt::Format)]
@@ -28,6 +31,7 @@ pub enum Menu {
     MoveToRename,
     MoveToCounting,
     MoveToProjectSelect,
+    MoveToStitchCounting,
     MoveToError(AppError),
 }
 
@@ -40,7 +44,7 @@ impl<'a> Menu {
         controllers.display_controller.return_home();
         controllers
             .display_controller
-            .set_backlight_color(150, 255, 0);
+            .set_backlight_color(116, 241, 9);
 
         Timer::after_millis(3).await;
         controllers
@@ -62,9 +66,9 @@ impl<'a> Menu {
             select_biased! {
                 button = INPUT_CHANNEL.receive().fuse() => {
                     match button{
-                        crate::input::InputIdentifier::ButtonA => next_state = Self::enter_state(current_menu_option),
-                        crate::input::InputIdentifier::ButtonB => current_menu_option = wrapped_deincrement(current_menu_option, 0, MENU_ORDER.len() - 1) ,//wrap around
-                        crate::input::InputIdentifier::ButtonC => current_menu_option = wrapped_increment(current_menu_option, 0, MENU_ORDER.len() - 1),
+                        crate::input::InputIdentifier::ButtonAPress| crate::input::InputIdentifier::ButtonALongPress | crate::input::InputIdentifier::ButtonADoublePress => next_state = Self::enter_state(current_menu_option),
+                        crate::input::InputIdentifier::ButtonBPress => current_menu_option = wrapped_deincrement(current_menu_option, 0, MENU_ORDER.len() - 1) ,//wrap around
+                        crate::input::InputIdentifier::ButtonCPress => current_menu_option = wrapped_increment(current_menu_option, 0, MENU_ORDER.len() - 1),
                     }
                 }
                 //TODO: Find better wait condition
@@ -78,6 +82,7 @@ impl<'a> Menu {
     const NAME_PROJECT: [u8; 12] = string_as_bytes("Name Project");
     const PROJECTS: [u8; 11] = string_as_bytes("Project Sel");
     const COUNT_ROWS: [u8; 10] = string_as_bytes("Count Rows");
+    const COUNT_STITCHES: [u8; 11] = string_as_bytes("Count Stchs");
 
     async fn write_menu_option<T: Instance>(
         current_menu_option: usize,
@@ -114,6 +119,9 @@ impl<'a> Menu {
                     .write_multiple_characters(&Self::COUNT_ROWS)
                     .await
             }
+            MenuOption::StitchCounting => display_controller
+                    .write_multiple_characters(&Self::COUNT_STITCHES)
+                    .await,
         }
     }
 
@@ -127,6 +135,7 @@ impl<'a> Menu {
             MenuOption::ProjectSelect => Self::MoveToProjectSelect,
             MenuOption::NameCurrentProject => Self::MoveToRename,
             MenuOption::RowCounting => Self::MoveToCounting,
+            MenuOption::StitchCounting => Self::MoveToStitchCounting,
         }
     }
 }

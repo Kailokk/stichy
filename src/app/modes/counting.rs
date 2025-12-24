@@ -29,7 +29,7 @@ impl<'a> Counting {
         controllers.display_controller.return_home();
         controllers
             .display_controller
-            .set_backlight_color(0, 200, 255);
+            .set_backlight_color(241, 77, 9);
 
         Timer::after_millis(3).await;
         controllers.display_controller.move_cursor_to_coord((0, 1));
@@ -45,9 +45,9 @@ impl<'a> Counting {
             select_biased! {
                 button = INPUT_CHANNEL.receive().fuse() => {
                     match button{
-                        crate::input::InputIdentifier::ButtonA => next_state = Self::MoveToMenu,
-                        crate::input::InputIdentifier::ButtonB => Self::decrement_count(user_data),
-                        crate::input::InputIdentifier::ButtonC => Self::increment_count(user_data),
+                        crate::input::InputIdentifier::ButtonAPress | crate::input::InputIdentifier::ButtonALongPress | crate::input::InputIdentifier::ButtonADoublePress => next_state = Self::MoveToMenu,
+                        crate::input::InputIdentifier::ButtonBPress => Self::decrement_count(user_data),
+                        crate::input::InputIdentifier::ButtonCPress => Self::increment_count(user_data),
                     }
                     Self::update_display(&mut controllers.display_controller, user_data).await;
                 }

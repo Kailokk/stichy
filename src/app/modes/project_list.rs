@@ -40,7 +40,7 @@ impl<'a> ProjectList {
         controllers.display_controller.return_home();
         controllers
             .display_controller
-            .set_backlight_color(150, 255, 0);
+            .set_backlight_color(116, 241, 9);
 
         Timer::after_millis(3).await;
         controllers
@@ -85,14 +85,14 @@ impl<'a> ProjectList {
             select_biased! {
                 button = INPUT_CHANNEL.receive().fuse() => {
                     match button{
-                        crate::input::InputIdentifier::ButtonA => {
+                        crate::input::InputIdentifier::ButtonAPress | crate::input::InputIdentifier::ButtonALongPress | crate::input::InputIdentifier::ButtonADoublePress => {
                             if pages[current_menu_option].name == string_as_bytes("New       "){
                                 next_state = Self::MoveToName
                             }else{
                             next_state = Self::MoveToCounting}
                         },
-                        crate::input::InputIdentifier::ButtonB => current_menu_option = wrapped_deincrement(current_menu_option, 0, pages.len() -1) ,//wrap around
-                        crate::input::InputIdentifier::ButtonC => current_menu_option = wrapped_increment(current_menu_option, 0, pages.len() -1),
+                        crate::input::InputIdentifier::ButtonBPress => current_menu_option = wrapped_deincrement(current_menu_option, 0, pages.len() -1) ,//wrap around
+                        crate::input::InputIdentifier::ButtonCPress => current_menu_option = wrapped_increment(current_menu_option, 0, pages.len() -1),
                     }
                 }
                 //TODO: Find better wait condition

@@ -4,8 +4,8 @@ use futures::{select_biased, FutureExt};
 use heapless::String;
 
 use crate::{
-    app::{peripheral_controller::PeripheralController, AppError},
-    data::UserData,
+    app::{AppError, peripheral_controller::PeripheralController},
+    data::{DEFAULT_NAME_CHARACTER, UserData},
     display::DisplayController,
     input::INPUT_CHANNEL,
     utility::{
@@ -38,7 +38,7 @@ impl<'a> Rename {
         Timer::after_millis(33).await;
         controllers
             .display_controller
-            .set_backlight_color(0, 0, 255);
+            .set_backlight_color(152, 9, 241);
 
         Timer::after_millis(33).await;
         controllers
@@ -65,7 +65,7 @@ impl<'a> Rename {
             select_biased! {
                 button = INPUT_CHANNEL.receive().fuse() => {
                     match button{
-                        crate::input::InputIdentifier::ButtonA => {
+                        crate::input::InputIdentifier::ButtonAPress => {
                             // TODO: Implement go back and save early features
                             if index >= 9{
                                 next_state = Self::MoveToCounting;
@@ -74,15 +74,27 @@ impl<'a> Rename {
                             name_value[index] = character;
                             index += 1;
                             Self::update_display(character,index as u8, &mut controllers.display_controller).await;
-                        },
-                        crate::input::InputIdentifier::ButtonB =>  {
+                        }
+                        crate::input::InputIdentifier::ButtonADoublePress =>{
+                            name_value[index] = DEFAULT_NAME_CHARACTER;
+                            Self::update_display(0b00100000,index as u8, &mut controllers.display_controller).await;
+                            index = index.checked_sub(1).unwrap_or(0);
+                            character = name_value[index];
+                            Self::update_display(character,index as u8, &mut controllers.display_controller).await;
+
+                        }
+                        crate::input::InputIdentifier::ButtonALongPress => {
+                            next_state = Self::MoveToCounting;
+                            break;
+                        }
+                        crate::input::InputIdentifier::ButtonBPress =>  {
                             character = wrapped_deincrement_u8(character, MIN_CHARACTER, MAX_CHARACTER);
                             Self::update_display(character,index as u8, &mut controllers.display_controller).await;
-                        },
-                        crate::input::InputIdentifier::ButtonC => {
+                        }
+                        crate::input::InputIdentifier::ButtonCPress => {
                             character = wrapped_increment_u8(character, MIN_CHARACTER, MAX_CHARACTER);
                             Self::update_display(character,index as u8, &mut controllers.display_controller).await;
-                        },
+                        }
                     }
                 }
                 //TODO: Find better wait condition
