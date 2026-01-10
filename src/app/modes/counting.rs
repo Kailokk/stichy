@@ -42,18 +42,13 @@ impl<'a> Counting {
 
         let mut next_state = Self::Continue;
         while next_state == Self::Continue {
-            select_biased! {
-                button = INPUT_CHANNEL.receive().fuse() => {
+                let (button, _) = INPUT_CHANNEL.receive().await;
                     match button{
-                        crate::input::InputIdentifier::ButtonAPress | crate::input::InputIdentifier::ButtonALongPress | crate::input::InputIdentifier::ButtonADoublePress => next_state = Self::MoveToMenu,
-                        crate::input::InputIdentifier::ButtonBPress => Self::decrement_count(user_data),
-                        crate::input::InputIdentifier::ButtonCPress => Self::increment_count(user_data),
+                        crate::input::ButtonIdentifier::ButtonA => next_state = Self::MoveToMenu,
+                        crate::input::ButtonIdentifier::ButtonB => Self::decrement_count(user_data),
+                        crate::input::ButtonIdentifier::ButtonC => Self::increment_count(user_data),
                     }
                     Self::update_display(&mut controllers.display_controller, user_data).await;
-                }
-                //TODO: Find better wait condition
-                _ = Timer::after_secs(500).fuse() => {}
-            }
         }
 
         if let Err(error) = controllers.memory_controller.save_state(user_data) {

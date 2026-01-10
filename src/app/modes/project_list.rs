@@ -83,16 +83,16 @@ impl<'a> ProjectList {
             .await;
 
             select_biased! {
-                button = INPUT_CHANNEL.receive().fuse() => {
+                (button, _) = INPUT_CHANNEL.receive().fuse() => {
                     match button{
-                        crate::input::InputIdentifier::ButtonAPress | crate::input::InputIdentifier::ButtonALongPress | crate::input::InputIdentifier::ButtonADoublePress => {
+                        crate::input::ButtonIdentifier::ButtonA => {
                             if pages[current_menu_option].name == string_as_bytes("New       "){
                                 next_state = Self::MoveToName
                             }else{
                             next_state = Self::MoveToCounting}
                         },
-                        crate::input::InputIdentifier::ButtonBPress => current_menu_option = wrapped_deincrement(current_menu_option, 0, pages.len() -1) ,//wrap around
-                        crate::input::InputIdentifier::ButtonCPress => current_menu_option = wrapped_increment(current_menu_option, 0, pages.len() -1),
+                        crate::input::ButtonIdentifier::ButtonB => current_menu_option = wrapped_deincrement(current_menu_option, 0, pages.len() -1) ,//wrap around
+                        crate::input::ButtonIdentifier::ButtonC => current_menu_option = wrapped_increment(current_menu_option, 0, pages.len() -1),
                     }
                 }
                 //TODO: Find better wait condition

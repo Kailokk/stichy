@@ -34,7 +34,7 @@
             "rustfmt"
             "rustc-dev"
           ];
-          targets = [ "thumbv8m.main-none-eabihf" ];
+          targets = [ "thumbv8m.main-none-eabihf" "thumbv6m-none-eabi" ];
         };
 
       in

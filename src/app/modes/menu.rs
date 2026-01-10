@@ -4,7 +4,7 @@ use futures::{select_biased, FutureExt};
 use heapless::String;
 
 use crate::{
-    app::{AppError, peripheral_controller::PeripheralController},
+    app::{peripheral_controller::PeripheralController, AppError},
     data::UserData,
     display::DisplayController,
     input::INPUT_CHANNEL,
@@ -16,7 +16,6 @@ static MENU_ORDER: [MenuOption; 4] = [
     MenuOption::StitchCounting,
     MenuOption::ProjectSelect,
     MenuOption::NameCurrentProject,
-
 ];
 enum MenuOption {
     ProjectSelect,
@@ -36,9 +35,7 @@ pub enum Menu {
 }
 
 impl<'a> Menu {
-    pub async fn run<T: Instance>(
-        controllers: &mut PeripheralController<'a, T>,
-    ) -> Self {
+    pub async fn run<T: Instance>(controllers: &mut PeripheralController<'a, T>) -> Self {
         defmt::debug!("Entering Menu State");
         controllers.display_controller.clear_display();
         controllers.display_controller.return_home();
@@ -63,16 +60,19 @@ impl<'a> Menu {
         while next_state == Self::Continue {
             Self::write_menu_option(current_menu_option, &mut controllers.display_controller).await;
 
-            select_biased! {
-                button = INPUT_CHANNEL.receive().fuse() => {
-                    match button{
-                        crate::input::InputIdentifier::ButtonAPress| crate::input::InputIdentifier::ButtonALongPress | crate::input::InputIdentifier::ButtonADoublePress => next_state = Self::enter_state(current_menu_option),
-                        crate::input::InputIdentifier::ButtonBPress => current_menu_option = wrapped_deincrement(current_menu_option, 0, MENU_ORDER.len() - 1) ,//wrap around
-                        crate::input::InputIdentifier::ButtonCPress => current_menu_option = wrapped_increment(current_menu_option, 0, MENU_ORDER.len() - 1),
-                    }
+            let (button, _) = INPUT_CHANNEL.receive().await;
+            match button {
+                crate::input::ButtonIdentifier::ButtonA => {
+                    next_state = Self::enter_state(current_menu_option)
                 }
-                //TODO: Find better wait condition
-                _ = Timer::after_secs(500).fuse() => {}
+                crate::input::ButtonIdentifier::ButtonB => {
+                    current_menu_option =
+                        wrapped_deincrement(current_menu_option, 0, MENU_ORDER.len() - 1)
+                } 
+                crate::input::ButtonIdentifier::ButtonC => {
+                    current_menu_option =
+                        wrapped_increment(current_menu_option, 0, MENU_ORDER.len() - 1)
+                }
             }
         }
 
@@ -119,9 +119,11 @@ impl<'a> Menu {
                     .write_multiple_characters(&Self::COUNT_ROWS)
                     .await
             }
-            MenuOption::StitchCounting => display_controller
+            MenuOption::StitchCounting => {
+                display_controller
                     .write_multiple_characters(&Self::COUNT_STITCHES)
-                    .await,
+                    .await
+            }
         }
     }
 

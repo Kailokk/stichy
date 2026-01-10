@@ -9,7 +9,7 @@ mod data;
 mod utility;
 
 use embassy_executor::Spawner;
-use embassy_rp::block::ImageDef;
+// use embassy_rp::block::ImageDef;
 use embassy_rp::{self as hal};
 
 use embassy_rp::{
@@ -30,9 +30,9 @@ use crate::{
 
 use {defmt_rtt as _, panic_probe as _};
 
-#[link_section = ".start_block"]
-#[used]
-pub static IMAGE_DEF: ImageDef = hal::block::ImageDef::secure_exe();
+// #[link_section = ".start_block"]
+// #[used]
+// pub static IMAGE_DEF: ImageDef = hal::block::ImageDef::secure_exe();
 
 //TODO: Understand this better and find out how i can move it out of here
 bind_interrupts!(struct Irqs {

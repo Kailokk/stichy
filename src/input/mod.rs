@@ -1,68 +1,57 @@
 use embassy_executor::{SpawnError, Spawner};
-use embassy_futures::{join, select};
 use embassy_rp::{
     gpio::{AnyPin, Input, Pull},
     Peri,
 };
 use embassy_sync::{blocking_mutex::raw::ThreadModeRawMutex, channel::Channel};
-use embassy_time::Timer;
+use embassy_time::{Duration, Timer};
+
+use crate::input::button::Button;
+
+mod button;
+
+const DEBOUNCE_DURATION: Duration = Duration::from_millis(20);
+const LONG_PRESS_MIN_LENGTH: Duration = Duration::from_millis(800);
+const SHORT_PRESS_MAX_INTERVAL: Duration = Duration::from_millis(200);
+
+//TODO: Pick a number for size of this channel
+pub static INPUT_CHANNEL: Channel<ThreadModeRawMutex, ButtonPress, 10> = Channel::new();
 
 #[derive(Clone, Copy, defmt::Format)]
-pub enum InputIdentifier {
-    ButtonAPress,
-    ButtonALongPress,
-    ButtonADoublePress,
-    ButtonBPress,
-    ButtonCPress,
+pub enum ButtonIdentifier {
+    ButtonA,
+    ButtonB,
+    ButtonC,
 }
 
-pub static INPUT_CHANNEL: Channel<ThreadModeRawMutex, InputIdentifier, 1> = Channel::new();
+#[derive(Clone, Copy, defmt::Format)]
+pub enum PressKind {
+    Press,
+    LongPress,
+    DoublePress,
+}
+
+pub struct ButtonPress {
+    pub button_identifier: ButtonIdentifier,
+    pub press_kind: PressKind,
+}
 
 //TODO: Improve Input Functionality
 #[embassy_executor::task(pool_size = 1)]
-async fn complex_input_task(
-    pin: Peri<'static, AnyPin>,
-    button_identifier: InputIdentifier,
-    long_press_identifier: InputIdentifier,
-    double_press_identifier: InputIdentifier,
-) {
-    let mut input = Input::new(pin, Pull::None);
+async fn observe_button_task(pin: Peri<'static, AnyPin>, button_identifier: ButtonIdentifier) {
+    let mut button = Button::new(
+        Input::new(pin, Pull::Up),
+        DEBOUNCE_DURATION,
+        LONG_PRESS_MIN_LENGTH,
+        SHORT_PRESS_MAX_INTERVAL,
+    );
     loop {
-        input.wait_for_low().await;
-        Timer::after_millis(100).await;
-        match select::select(input.wait_for_high(), Timer::after_millis(800)).await {
-            select::Either::First(_) => {
-                match select::select(input.wait_for_low(), Timer::after_millis(200)).await {
-                    select::Either::First(_) => {
-                        input.wait_for_low().await;
-                        INPUT_CHANNEL.send(double_press_identifier).await;
-                        input.wait_for_high().await;
-                    }
-                    select::Either::Second(_) => INPUT_CHANNEL.send(button_identifier).await,
-                }
-            }
-            select::Either::Second(_) => {
-                join::join(
-                    INPUT_CHANNEL.send(long_press_identifier),
-                    input.wait_for_high(),
-                )
-                .await;
-                ()
-            }
-        }
-        Timer::after_millis(80).await;
-    }
-}
+        let press_kind = button.wait_for_press().await;
 
-//TODO: Improve Input Functionality
-#[embassy_executor::task(pool_size = 2)]
-async fn input_task(pin: Peri<'static, AnyPin>, button_identifier: InputIdentifier) {
-    let mut input = Input::new(pin, Pull::None);
-    loop {
-        input.wait_for_low().await;
-        INPUT_CHANNEL.send(button_identifier).await;
-        Timer::after_millis(100).await;
-        input.wait_for_high().await;
+        INPUT_CHANNEL.send(ButtonPress {
+            button_identifier,
+            press_kind,
+        });
     }
 }
 
@@ -72,13 +61,8 @@ pub fn init_input(
     button_b: Peri<'static, AnyPin>,
     button_c: Peri<'static, AnyPin>,
 ) -> Result<(), SpawnError> {
-    spawner.spawn(complex_input_task(
-        button_a,
-        InputIdentifier::ButtonAPress,
-        InputIdentifier::ButtonALongPress,
-        InputIdentifier::ButtonADoublePress,
-    ))?;
-    spawner.spawn(input_task(button_b, InputIdentifier::ButtonBPress))?;
-    spawner.spawn(input_task(button_c, InputIdentifier::ButtonCPress))?;
+    spawner.spawn(observe_button_task(button_b, ButtonIdentifier::ButtonA))?;
+    spawner.spawn(observe_button_task(button_a, ButtonIdentifier::ButtonB))?;
+    spawner.spawn(observe_button_task(button_c, ButtonIdentifier::ButtonC))?;
     Ok(())
 }

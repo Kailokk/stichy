@@ -43,11 +43,11 @@ impl<'a> StitchCounting {
         let mut next_state = Self::Continue;
         while next_state == Self::Continue {
             select_biased! {
-                button = INPUT_CHANNEL.receive().fuse() => {
+                (button, _) = INPUT_CHANNEL.receive().fuse() => {
                     match button{
-                        crate::input::InputIdentifier::ButtonAPress => next_state = Self::MoveToMenu,
-                        crate::input::InputIdentifier::ButtonBPress => stitch_count = stitch_count.checked_sub(1).unwrap_or(0),
-                        crate::input::InputIdentifier::ButtonCPress => stitch_count = stitch_count.checked_add(1).unwrap_or(stitch_count),
+                        crate::input::ButtonIdentifier::ButtonA => next_state = Self::MoveToMenu,
+                        crate::input::ButtonIdentifier::ButtonB => stitch_count = stitch_count.checked_sub(1).unwrap_or(0),
+                        crate::input::ButtonIdentifier::ButtonC => stitch_count = stitch_count.checked_add(1).unwrap_or(stitch_count),
                         _ => ()
                     }
                     colors = Self::change_colors(colors, stitch_count);
