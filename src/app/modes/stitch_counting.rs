@@ -42,20 +42,19 @@ impl<'a> StitchCounting {
         Self::update_display(&mut controllers.display_controller, stitch_count, colors).await;
         let mut next_state = Self::Continue;
         while next_state == Self::Continue {
-            select_biased! {
-                (button, _) = INPUT_CHANNEL.receive().fuse() => {
-                    match button{
-                        crate::input::ButtonIdentifier::ButtonA => next_state = Self::MoveToMenu,
-                        crate::input::ButtonIdentifier::ButtonB => stitch_count = stitch_count.checked_sub(1).unwrap_or(0),
-                        crate::input::ButtonIdentifier::ButtonC => stitch_count = stitch_count.checked_add(1).unwrap_or(stitch_count),
-                        _ => ()
-                    }
-                    colors = Self::change_colors(colors, stitch_count);
-                    Self::update_display(&mut controllers.display_controller, stitch_count, colors).await;
+            let press = INPUT_CHANNEL.receive().await;
+            match press.button_identifier {
+                crate::input::ButtonIdentifier::ButtonA => next_state = Self::MoveToMenu,
+                crate::input::ButtonIdentifier::ButtonB => {
+                    stitch_count = stitch_count.checked_sub(1).unwrap_or(0)
                 }
-                //TODO: Find better wait condition
-                _ = Timer::after_secs(500).fuse() => {}
+                crate::input::ButtonIdentifier::ButtonC => {
+                    stitch_count = stitch_count.checked_add(1).unwrap_or(stitch_count)
+                }
+                _ => (),
             }
+            colors = Self::change_colors(colors, stitch_count);
+            Self::update_display(&mut controllers.display_controller, stitch_count, colors).await;
         }
 
         next_state

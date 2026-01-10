@@ -42,8 +42,8 @@ impl<'a> Counting {
 
         let mut next_state = Self::Continue;
         while next_state == Self::Continue {
-                let (button, _) = INPUT_CHANNEL.receive().await;
-                    match button{
+                let press = INPUT_CHANNEL.receive().await;
+                    match press.button_identifier{
                         crate::input::ButtonIdentifier::ButtonA => next_state = Self::MoveToMenu,
                         crate::input::ButtonIdentifier::ButtonB => Self::decrement_count(user_data),
                         crate::input::ButtonIdentifier::ButtonC => Self::increment_count(user_data),

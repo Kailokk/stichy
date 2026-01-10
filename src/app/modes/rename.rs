@@ -63,17 +63,16 @@ impl<'a> Rename {
 
         defmt::debug!("Entering Menu loop");
         while next_state == Self::Continue {
-            let (button, press_type): (ButtonIdentifier, PressKind) =
-                match select::select(Timer::after_secs(5), INPUT_CHANNEL.receive()).await {
-                    select::Either::First(_) => {
-                        //TODO: Implement auto save if changes have been made
-                        continue;
-                    }
-                    select::Either::Second(input) => (input.0, input.1),
-                };
-            match button {
+            let press = match select::select(Timer::after_secs(5), INPUT_CHANNEL.receive()).await {
+                select::Either::First(_) => {
+                    //TODO: Implement auto save if changes have been made
+                    continue;
+                }
+                select::Either::Second(press) => press,
+            };
+            match press.button_identifier {
                 crate::input::ButtonIdentifier::ButtonA => {
-                    match press_type {
+                    match press.press_kind {
                         PressKind::Press => {
                             // TODO: Implement go back and save early features
                             if index >= 9 {

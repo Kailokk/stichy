@@ -60,8 +60,8 @@ impl<'a> Menu {
         while next_state == Self::Continue {
             Self::write_menu_option(current_menu_option, &mut controllers.display_controller).await;
 
-            let (button, _) = INPUT_CHANNEL.receive().await;
-            match button {
+            let press = INPUT_CHANNEL.receive().await;
+            match press.button_identifier {
                 crate::input::ButtonIdentifier::ButtonA => {
                     next_state = Self::enter_state(current_menu_option)
                 }
