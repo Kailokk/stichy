@@ -2,7 +2,7 @@ use embassy_rp::i2c::Instance;
 use embassy_time::Timer;
 
 use crate::{
-    app::{peripheral_controller::PeripheralController, AppError},
+    app::{peripheral_controller::PeripheralController},
     display::DisplayController,
     input::INPUT_CHANNEL,
     utility::{string_as_bytes, wrapped_deincrement, wrapped_increment},
@@ -28,7 +28,6 @@ pub enum Menu {
     MoveToCounting,
     MoveToProjectSelect,
     MoveToStitchCounting,
-    MoveToError(AppError),
 }
 
 impl<'a> Menu {

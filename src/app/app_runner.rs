@@ -7,7 +7,7 @@ use embassy_time::Timer;
 
 use crate::{
     app::{
-        AppError, modes::{Counting, Initializing, Menu, ProjectList, Rename, StitchCounting, display_recoverable_error, display_unrecoverable_error}, peripheral_controller::PeripheralController
+        AppError, AppState, modes::{Counting, Initializing, Menu, ProjectList, Rename, StitchCounting, display_recoverable_error, display_unrecoverable_error}, peripheral_controller::PeripheralController
     },
     data::UserData,
     memory_controller::MemoryIOError,
@@ -15,23 +15,14 @@ use crate::{
 
 use crate::data::DEFAULT_NAME_CHARACTER;
 
-#[derive(defmt::Format)]
-pub enum AppState {
-    Initializing(Initializing),
-    Counting(Counting),
-    Menu(Menu),
-    Rename(Rename),
-    ProjectList(ProjectList),
-    StitchCounting(StitchCounting)
-}
 
-pub struct App<'a> {
+pub struct AppRunner<'a> {
     peripherals: PeripheralController<'a, I2C0>,
     app_state: AppState,
     user_data: UserData,
 }
 
-impl<'a> App<'a> {
+impl<'a> AppRunner<'a> {
     pub async fn new(mut peripherals: PeripheralController<'a, I2C0>) -> Self {
         let (_, user_data): ((), Result<UserData, MemoryIOError>) = join(
             Initializing::flash_display(&mut peripherals.display_controller),
@@ -90,9 +81,6 @@ impl<'a> App<'a> {
                 Menu::Continue => AppState::Menu(Menu::run(&mut self.peripherals).await),
                 Menu::MoveToCounting => AppState::Counting(Counting::Continue),
                 Menu::MoveToRename => AppState::Rename(Rename::Continue),
-                Menu::MoveToError(app_error) => {
-                    Self::handle_error(app_error, &mut self.peripherals).await
-                }
                 Menu::MoveToProjectSelect => AppState::ProjectList(ProjectList::Continue),
                 Menu::MoveToStitchCounting => AppState::StitchCounting(StitchCounting::Continue),
             },
@@ -118,7 +106,6 @@ impl<'a> App<'a> {
             AppState::StitchCounting(stitch_counting) => match stitch_counting{
                 StitchCounting::Continue => AppState::StitchCounting(StitchCounting::run(&mut self.peripherals).await),
                 StitchCounting::MoveToMenu => AppState::Menu(Menu::Continue),
-                StitchCounting::MoveToError(app_error) => Self::handle_error(app_error, &mut self.peripherals).await,
             },
         }
     }

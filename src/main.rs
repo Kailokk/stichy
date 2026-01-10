@@ -19,7 +19,7 @@ use embassy_rp::{
 };
 use embassy_time::Timer;
 
-use crate::app::{App, PeripheralController};
+use crate::app::{AppRunner, PeripheralController};
 use crate::{
     display::DisplayController,
     input::init_input,
@@ -76,7 +76,7 @@ defmt::debug!("Initiating startup sequence");
         let memory_controller = MemoryController::init(flash);
         let peripheral_controller = PeripheralController{ display_controller, memory_controller };
         
-        let mut app = App::new(peripheral_controller).await;
+        let mut app = AppRunner::new(peripheral_controller).await;
 
         loop{
             app.step().await;

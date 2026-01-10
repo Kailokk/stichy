@@ -97,26 +97,6 @@ impl<'a, T: Instance> DisplayController<'a, T> {
         }
     }
 
-    pub fn set_writing_shift_mode(&mut self) {
-        self.driver.write_command(
-            DisplayCommand::SetEntryMode {
-                cursor_move_rtl: false,
-                can_shift: true,
-            }
-            .to_byte(),
-        );
-    }
-
-    pub fn set_writing_coordinate_mode(&mut self) {
-        self.driver.write_command(
-            DisplayCommand::SetEntryMode {
-                cursor_move_rtl: false,
-                can_shift: false,
-            }
-            .to_byte(),
-        );
-    }
-
     pub fn return_home(&mut self) {
         self.move_cursor_to_coord((0, 0));
     }

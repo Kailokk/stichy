@@ -3,8 +3,7 @@ use embassy_time::Timer;
 use heapless::String;
 
 use crate::{
-    app::{peripheral_controller::PeripheralController, AppError},
-    data::UserData,
+    app::{peripheral_controller::PeripheralController},
     display::DisplayController,
     input::INPUT_CHANNEL,
     utility::string_as_bytes,
@@ -16,7 +15,6 @@ static STITCHES_WORD: [u8; 9] = string_as_bytes("Stitches:");
 pub enum StitchCounting {
     Continue,
     MoveToMenu,
-    MoveToError(AppError),
 }
 
 impl<'a> StitchCounting {
@@ -89,15 +87,5 @@ impl<'a> StitchCounting {
         }
 
         colors
-    }
-
-    fn increment_count(user_data: &mut UserData) {
-        user_data.current_page_mut().row_count += 1;
-    }
-
-    fn decrement_count(user_data: &mut UserData) {
-        user_data.current_page_mut().row_count = user_data
-            .current_page_mut()
-            .row_count.saturating_sub(1);
     }
 }

@@ -1,10 +1,21 @@
 mod peripheral_controller;
-mod app;
+mod app_runner;
 pub mod modes;
-pub use app::App;
+pub use app_runner::AppRunner;
 pub use peripheral_controller::PeripheralController;
-use crate::memory_controller::MemoryIOError;
+use crate::{app::modes::{Counting, Initializing, Menu, ProjectList, Rename, StitchCounting}, memory_controller::MemoryIOError};
 
+
+
+#[derive(defmt::Format)]
+pub enum AppState {
+    Initializing(Initializing),
+    Counting(Counting),
+    Menu(Menu),
+    Rename(Rename),
+    ProjectList(ProjectList),
+    StitchCounting(StitchCounting)
+}
 
 #[derive(Debug,thiserror::Error, defmt::Format, PartialEq, Eq)]
 #[error("App Error: {0}")]

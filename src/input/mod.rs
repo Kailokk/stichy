@@ -51,7 +51,7 @@ async fn observe_button_task(pin: Peri<'static, AnyPin>, button_identifier: Butt
         INPUT_CHANNEL.send(ButtonPress {
             button_identifier,
             press_kind,
-        });
+        }).await;
     }
 }
 

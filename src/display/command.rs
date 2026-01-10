@@ -68,20 +68,3 @@ impl DisplayCommand {
         }
     }
 }
-
-//TODO: Implement tests when debug probe is available using probe-rs and embedded-test libraries
-// #[cfg(test)]
-// mod test{
-//     use crate::display::command::DisplayCommand;
-
-//     #[rstest]
-//     #[case(false, false, 0b0000_0100)]
-//     #[case(true, false, 0b0000_0110)]
-//     #[case(false, true, 0b0000_0101)]
-//     #[case(true, true, 0b0000_0111)]
-//     pub fn set_entry_mode_renders_correctly(#[case]cursor_move_rtl:bool, #[case]can_shift:bool, #[case]expected:u8){
-//         let command = DisplayCommand::SetEntryMode { cursor_move_rtl, can_shift };
-//         assert_eq!(expected, command);
-//     }
-
-// }
