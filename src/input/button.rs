@@ -12,7 +12,12 @@ pub struct Button<'a> {
 }
 
 impl<'a> Button<'a> {
-    pub fn new(input: Input<'a>, debounce_time: Duration, long_press_min_length:Duration, double_press_max_interval:Duration) -> Self {
+    pub fn new(
+        input: Input<'a>,
+        debounce_time: Duration,
+        long_press_min_length: Duration,
+        double_press_max_interval: Duration,
+    ) -> Self {
         Self {
             input,
             debounce_time,
@@ -21,7 +26,7 @@ impl<'a> Button<'a> {
         }
     }
 
-    pub async fn wait_for_press(&mut self) -> PressKind {
+    pub async fn wait_for_any_press(&mut self) -> PressKind {
         self.wait_for_depress().await;
 
         // Check for long press
@@ -51,6 +56,24 @@ impl<'a> Button<'a> {
                 PressKind::DoublePress
             }
         };
+    }
+
+    pub async fn wait_for_single_press(&mut self) -> PressKind {
+        self.wait_for_depress().await;
+        match select::select(
+            Timer::after(self.long_press_min_length),
+            self.wait_for_release(),
+        )
+        .await
+        {
+            select::Either::First(_) => {
+                self.wait_for_release().await;
+                return PressKind::LongPress;
+            }
+            select::Either::Second(_) => {
+                return PressKind::Press;
+            }
+        }
     }
 
     async fn wait_for_depress(&mut self) {

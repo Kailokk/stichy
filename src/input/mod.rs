@@ -37,16 +37,36 @@ pub struct ButtonPress {
 }
 
 //TODO: Improve Input Functionality
-#[embassy_executor::task(pool_size = 3)]
-async fn observe_button_task(pin: Peri<'static, AnyPin>, button_identifier: ButtonIdentifier) {
+#[embassy_executor::task(pool_size = 1)]
+async fn observe_button_press_task(pin: Peri<'static, AnyPin>, button_identifier: ButtonIdentifier) {
     let mut button = Button::new(
         Input::new(pin, Pull::Up),
         DEBOUNCE_DURATION,
         LONG_PRESS_MIN_LENGTH,
         SHORT_PRESS_MAX_INTERVAL,
     );
+
     loop {
-        let press_kind = button.wait_for_press().await;
+        let press_kind = button.wait_for_any_press().await;
+
+        INPUT_CHANNEL.send(ButtonPress {
+            button_identifier,
+            press_kind,
+        }).await;
+    }
+}
+
+#[embassy_executor::task(pool_size = 2)]
+async fn observe_single_button_press_task(pin: Peri<'static, AnyPin>, button_identifier: ButtonIdentifier) {
+    let mut button = Button::new(
+        Input::new(pin, Pull::Up),
+        DEBOUNCE_DURATION,
+        LONG_PRESS_MIN_LENGTH,
+        SHORT_PRESS_MAX_INTERVAL,
+    );
+
+    loop {
+        let press_kind = button.wait_for_any_press().await;
 
         INPUT_CHANNEL.send(ButtonPress {
             button_identifier,
@@ -61,8 +81,8 @@ pub fn init_input(
     button_b: Peri<'static, AnyPin>,
     button_c: Peri<'static, AnyPin>,
 ) -> Result<(), SpawnError> {
-    spawner.spawn(observe_button_task(button_b, ButtonIdentifier::ButtonA))?;
-    spawner.spawn(observe_button_task(button_a, ButtonIdentifier::ButtonB))?;
-    spawner.spawn(observe_button_task(button_c, ButtonIdentifier::ButtonC))?;
+    spawner.spawn(observe_button_press_task(button_b, ButtonIdentifier::ButtonA))?;
+    spawner.spawn(observe_single_button_press_task(button_a, ButtonIdentifier::ButtonB))?;
+    spawner.spawn(observe_single_button_press_task(button_c, ButtonIdentifier::ButtonC))?;
     Ok(())
 }
