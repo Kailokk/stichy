@@ -37,7 +37,7 @@ pub struct ButtonPress {
 }
 
 //TODO: Improve Input Functionality
-#[embassy_executor::task(pool_size = 1)]
+#[embassy_executor::task(pool_size = 3)]
 async fn observe_button_task(pin: Peri<'static, AnyPin>, button_identifier: ButtonIdentifier) {
     let mut button = Button::new(
         Input::new(pin, Pull::Up),
