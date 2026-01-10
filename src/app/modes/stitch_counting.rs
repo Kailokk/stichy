@@ -1,6 +1,5 @@
 use embassy_rp::i2c::Instance;
 use embassy_time::Timer;
-use futures::{select_biased, FutureExt};
 use heapless::String;
 
 use crate::{
@@ -46,12 +45,11 @@ impl<'a> StitchCounting {
             match press.button_identifier {
                 crate::input::ButtonIdentifier::ButtonA => next_state = Self::MoveToMenu,
                 crate::input::ButtonIdentifier::ButtonB => {
-                    stitch_count = stitch_count.checked_sub(1).unwrap_or(0)
+                    stitch_count = stitch_count.saturating_sub(1)
                 }
                 crate::input::ButtonIdentifier::ButtonC => {
                     stitch_count = stitch_count.checked_add(1).unwrap_or(stitch_count)
                 }
-                _ => (),
             }
             colors = Self::change_colors(colors, stitch_count);
             Self::update_display(&mut controllers.display_controller, stitch_count, colors).await;
@@ -77,17 +75,17 @@ impl<'a> StitchCounting {
 
     fn change_colors(mut colors: (u8, u8, u8), stitch_count: u16) -> (u8, u8, u8) {
         if stitch_count < 50 {
-            colors.2 = colors.2.checked_add(255 / 50).unwrap_or(255);
+            colors.2 = colors.2.saturating_add(255 / 50);
         } else if stitch_count > 50 && stitch_count < 100 {
-            colors.1 = colors.1.checked_add(255 / 50).unwrap_or(255);
-            colors.2 = colors.2.checked_sub(255 / 50).unwrap_or(0);
+            colors.1 = colors.1.saturating_add(255 / 50);
+            colors.2 = colors.2.saturating_sub(255 / 50);
         } else if stitch_count > 100 && stitch_count < 150 {
-            colors.0 = colors.0.checked_add(255 / 50).unwrap_or(255);
-            colors.1 = colors.1.checked_sub(255 / 50).unwrap_or(0);
+            colors.0 = colors.0.saturating_add(255 / 50);
+            colors.1 = colors.1.saturating_sub(255 / 50);
         } else {
-            colors.0 = colors.0.checked_add(255 / 50).unwrap_or(255);
-            colors.1 = colors.1.checked_add(255 / 50).unwrap_or(255);
-            colors.2 = colors.2.checked_add(255 / 50).unwrap_or(255);
+            colors.0 = colors.0.saturating_add(255 / 50);
+            colors.1 = colors.1.saturating_add(255 / 50);
+            colors.2 = colors.2.saturating_add(255 / 50);
         }
 
         colors
@@ -100,8 +98,6 @@ impl<'a> StitchCounting {
     fn decrement_count(user_data: &mut UserData) {
         user_data.current_page_mut().row_count = user_data
             .current_page_mut()
-            .row_count
-            .checked_sub(1)
-            .unwrap_or(0);
+            .row_count.saturating_sub(1);
     }
 }

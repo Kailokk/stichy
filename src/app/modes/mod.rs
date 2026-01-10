@@ -8,7 +8,8 @@ mod stitch_counting;
 
 pub use initialising::Initializing;
 pub use counting::Counting;
-pub use error::Error;
+pub use error::display_recoverable_error;
+pub use error::display_unrecoverable_error;
 pub use menu::Menu;
 pub use rename::Rename;
 pub use project_list::ProjectList;

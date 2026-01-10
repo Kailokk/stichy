@@ -4,7 +4,7 @@ use embassy_rp::{
     Peri,
 };
 use embassy_sync::{blocking_mutex::raw::ThreadModeRawMutex, channel::Channel};
-use embassy_time::{Duration, Timer};
+use embassy_time::Duration;
 
 use crate::input::button::Button;
 

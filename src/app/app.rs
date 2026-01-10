@@ -1,14 +1,13 @@
 use embassy_futures::join::join;
 use embassy_rp::{
-    bind_interrupts,
-    i2c::{Instance, InterruptHandler},
+    i2c::Instance,
     peripherals::I2C0,
 };
 use embassy_time::Timer;
 
 use crate::{
     app::{
-        AppError, modes::{self, Counting, Initializing, Menu, ProjectList, Rename, StitchCounting}, peripheral_controller::PeripheralController
+        AppError, modes::{Counting, Initializing, Menu, ProjectList, Rename, StitchCounting, display_recoverable_error, display_unrecoverable_error}, peripheral_controller::PeripheralController
     },
     data::UserData,
     memory_controller::MemoryIOError,
@@ -131,12 +130,12 @@ impl<'a> App<'a> {
         match app_error {
             crate::app::AppError::Memory(error) => {
                 defmt::debug!("Memory error: {}", error);
-                modes::Error::display_recoverable_error(app_error, peripherals).await;
+                display_recoverable_error(app_error, peripherals).await;
                 AppState::Rename(Rename::Continue)
             }
             AppError::CouldNotAddNew => {
                 defmt::debug!("Could not add new option to project list");
-                modes::Error::display_unrecoverable_error(app_error, peripherals).await;
+                display_unrecoverable_error(app_error, peripherals).await;
                 loop{
                     Timer::after_secs(3000).await
                 }

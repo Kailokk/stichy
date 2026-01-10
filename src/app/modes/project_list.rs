@@ -1,11 +1,10 @@
 use embassy_rp::i2c::Instance;
 use embassy_time::Timer;
-use futures::{select_biased, FutureExt};
-use heapless::{String, Vec};
+use heapless::Vec;
 
 use crate::{
     app::{peripheral_controller::PeripheralController, AppError},
-    data::{Page, UserData, DEFAULT_NAME, DEFAULT_NAME_CHARACTER, PAGE_COUNT},
+    data::{Page, UserData, DEFAULT_NAME, PAGE_COUNT},
     display::DisplayController,
     input::INPUT_CHANNEL,
     utility::{string_as_bytes, wrapped_deincrement, wrapped_increment},
@@ -57,13 +56,13 @@ impl<'a> ProjectList {
             .all_pages()
             .iter()
             .copied()
-            .filter(|page| !(page.name == DEFAULT_NAME))
+            .filter(|page| page.name != DEFAULT_NAME)
             .collect();
         //TODO: Fix this idiotic piece of code
-        if let Err(_) = pages.push(Page {
+        if pages.push(Page {
             name: (string_as_bytes("New       ")),
             row_count: 0,
-        }) {
+        }).is_err() {
             defmt::debug!("Contents:");
             for page in pages.iter().enumerate() {
                 defmt::debug!("{}: {}", page.0, page.1);

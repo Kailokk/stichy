@@ -10,7 +10,6 @@ mod utility;
 
 use embassy_executor::Spawner;
 // use embassy_rp::block::ImageDef;
-use embassy_rp::{self as hal};
 
 use embassy_rp::{
     bind_interrupts,

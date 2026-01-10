@@ -1,11 +1,8 @@
 use embassy_rp::i2c::Instance;
 use embassy_time::Timer;
-use futures::{select_biased, FutureExt};
-use heapless::String;
 
 use crate::{
     app::{peripheral_controller::PeripheralController, AppError},
-    data::UserData,
     display::DisplayController,
     input::INPUT_CHANNEL,
     utility::{string_as_bytes, wrapped_deincrement, wrapped_increment},

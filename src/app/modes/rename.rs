@@ -1,16 +1,14 @@
 use embassy_futures::select;
 use embassy_rp::i2c::Instance;
 use embassy_time::Timer;
-use futures::{select_biased, FutureExt};
-use heapless::String;
 
 use crate::{
     app::{peripheral_controller::PeripheralController, AppError},
     data::{UserData, DEFAULT_NAME_CHARACTER},
     display::DisplayController,
-    input::{ButtonIdentifier, PressKind, INPUT_CHANNEL},
+    input::{PressKind, INPUT_CHANNEL},
     utility::{
-        string_as_bytes, wrapped_deincrement, wrapped_deincrement_u8, wrapped_increment,
+        string_as_bytes, wrapped_deincrement_u8,
         wrapped_increment_u8,
     },
 };
@@ -100,7 +98,7 @@ impl<'a> Rename {
                                 &mut controllers.display_controller,
                             )
                             .await;
-                            index = index.checked_sub(1).unwrap_or(0);
+                            index = index.saturating_sub(1);
                             character = name_value[index];
                             Self::update_display(
                                 character,

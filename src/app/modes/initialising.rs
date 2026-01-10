@@ -2,7 +2,7 @@ use embassy_rp::i2c::Instance;
 use embassy_time::Timer;
 
 use crate::{
-    app::AppError, data::{DEFAULT_NAME_CHARACTER, UserData}, display::DisplayController
+    app::AppError, display::DisplayController
 };
 
 #[derive(defmt::Format)]
